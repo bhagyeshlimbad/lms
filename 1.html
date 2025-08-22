@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fuel Management — Firebase Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* minimal styling, same as before */
+body{margin:0;font-family:Poppins,system-ui;background:#021026;color:#e7f2ff}
+header{padding:10px;background:#072743;color:#fff}
+.container{padding:20px}
+.card{background:#0b1d36;padding:15px;border-radius:10px;margin-bottom:12px}
+input,select{width:100%;padding:8px;margin-top:5px;border-radius:6px;border:1px solid #223;color:#fff;background:#0e2a4c}
+button{padding:8px 14px;margin-top:10px;border-radius:6px;border:none;cursor:pointer}
+.btn-primary{background:#22d3ee;color:#000;font-weight:700}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h2>🚍 Fuel Management (Firebase)</h2>
+</header>
+
+<div class="container">
+
+  <!-- LOGIN -->
+  <div id="viewLogin" class="card">
+    <h3>Login</h3>
+    <input id="loginUser" placeholder="Username" />
+    <input id="loginPass" type="password" placeholder="Password" />
+    <button class="btn-primary" id="btnLogin">Login</button>
+  </div>
+
+  <!-- HOME -->
+  <div id="viewHome" class="card hidden">
+    <h3>Welcome, <span id="userName"></span></h3>
+    <button onclick="openView('viewAddFuel')">➕ Add Fuel</button>
+    <button onclick="openView('viewMyRequests')">📑 My Requests</button>
+    <button onclick="logout()">🚪 Logout</button>
+  </div>
+
+  <!-- ADD FUEL -->
+  <div id="viewAddFuel" class="card hidden">
+    <h3>Add Fuel Request</h3>
+    <select id="frVehicle"></select>
+    <select id="frVendor"></select>
+    <input id="frRate" type="number" placeholder="Rate per Liter" />
+    <input id="frLiters" type="number" placeholder="Liters" />
+    <input id="frTotal" readonly placeholder="Total" />
+    <button class="btn-primary" id="btnSubmitFuel">Submit</button>
+    <button onclick="openView('viewHome')">Cancel</button>
+  </div>
+
+  <!-- MY REQUESTS -->
+  <div id="viewMyRequests" class="card hidden">
+    <h3>My Requests</h3>
+    <div id="myRequestsList"></div>
+    <button onclick="openView('viewHome')">⬅ Back</button>
+  </div>
+
+</div>
+
+<script type="module">
+/* ---------------------------
+   Firebase Config (INLINE)
+   Replace values with your own
+---------------------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* ---------------------------
+   Simple App Logic
+---------------------------- */
+let SESSION = null;
+const $ = s => document.querySelector(s);
+
+function openView(id){
+  ["viewLogin","viewHome","viewAddFuel","viewMyRequests"].forEach(v=>$( "#" + v ).classList.add("hidden"));
+  $("#" + id).classList.remove("hidden");
+}
+
+function logout(){
+  SESSION = null;
+  openView("viewLogin");
+}
+
+/* LOGIN */
+$("#btnLogin").onclick = async () => {
+  const u = $("#loginUser").value.trim();
+  const p = $("#loginPass").value;
+  if(!u||!p) return alert("Enter credentials");
+  const snap = await get(ref(db,"users"));
+  if(!snap.exists()) return alert("No users found in DB. Import seed.json first!");
+  const users = snap.val();
+  const arr = Object.values(users);
+  const user = arr.find(x => x.username===u && x.password===p);
+  if(!user) return alert("Invalid credentials");
+  SESSION = user;
+  $("#userName").textContent = SESSION.displayName || SESSION.username;
+  openView("viewHome");
+};
+
+/* PREPARE FORM */
+async function prepareForm(){
+  const vSnap = await get(ref(db,"vehicles"));
+  $("#frVehicle").innerHTML = vSnap.exists() ? Object.values(vSnap.val()).map(v=>`<option value="${v.id}">${v.number}</option>`).join("") : "";
+  const venSnap = await get(ref(db,"vendors"));
+  $("#frVendor").innerHTML = venSnap.exists() ? Object.values(venSnap.val()).map(v=>`<option value="${v.id}">${v.name}</option>`).join("") : "";
+}
+$("#frRate").oninput = calcTotal;
+$("#frLiters").oninput = calcTotal;
+function calcTotal(){ $("#frTotal").value = ((+$("#frRate").value||0) * (+$("#frLiters").value||0)).toFixed(2); }
+
+/* SUBMIT REQUEST */
+$("#btnSubmitFuel").onclick = async () => {
+  if(!SESSION) return alert("Login first");
+  const req = {
+    id: Date.now().toString(),
+    driverId: SESSION.id,
+    driverName: SESSION.displayName,
+    vehicleId: $("#frVehicle").value,
+    vendorId: $("#frVendor").value,
+    rate: +$("#frRate").value||0,
+    liters: +$("#frLiters").value||0,
+    total: +$("#frTotal").value||0,
+    status: "PENDING",
+    createdAt: new Date().toISOString()
+  };
+  await set(push(ref(db,"requests")), req);
+  alert("Fuel Request Submitted!");
+  openView("viewMyRequests");
+  loadMyRequests();
+};
+
+/* LOAD MY REQUESTS */
+async function loadMyRequests(){
+  if(!SESSION) return;
+  const snap = await get(ref(db,"requests"));
+  const list = $("#myRequestsList");
+  if(!snap.exists()){ list.innerHTML = "<p>No requests</p>"; return; }
+  const reqs = Object.values(snap.val()).filter(r=>r.driverId===SESSION.id);
+  list.innerHTML = reqs.map(r=>`<div class="card"><b>#${r.id}</b> • ${r.status} • ₹${r.total}</div>`).join("");
+}
+
+/* When switching views */
+window.openView = async function(id){
+  ["viewLogin","viewHome","viewAddFuel","viewMyRequests"].forEach(v=>$( "#" + v ).classList.add("hidden"));
+  $("#" + id).classList.remove("hidden");
+  if(id==="viewAddFuel") await prepareForm();
+  if(id==="viewMyRequests") await loadMyRequests();
+}
+
+</script>
+</body>
+</html>
