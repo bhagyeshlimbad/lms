@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Busmate — Fuel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* compact styling: responsive, widget-friendly, mobile optimized */
+:root{
+  --bg1:#071023; --bg2:#072743; --muted:#9fb6cc; --accentA:#50c7ff; --accentB:#6a7bff;
+  --card:rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Poppins,system-ui,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#e8f6ff;min-height:100vh}
+.app{max-width:1100px;margin:12px auto;padding:12px}
+.header{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:44px;height:44px;border-radius:8px;display:none;object-fit:cover}
+.title{font-weight:700}
+.small{font-size:13px;color:var(--muted)}
+.spacer{flex:1}
+.btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:10px;color:#e8f6ff}
+.btn.primary{background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#02111a;border:none;font-weight:700}
+.container{display:grid;grid-template-columns:260px 1fr;gap:12px;margin-top:12px}
+@media(max-width:900px){ .container{grid-template-columns:1fr} }
+.sidebar{padding:12px;border-radius:10px;background:var(--card);border:1px solid rgba(255,255,255,0.03)}
+.menu button{display:block;width:100%;text-align:left;padding:10px;border-radius:8px;border:0;background:transparent;color:#e8f6ff;margin-bottom:6px;cursor:pointer}
+.menu button.active{background:#0b2746}
+.card{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03)}
+.widgets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:1000px){ .widgets{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:700px){ .widgets{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:420px){ .widgets{grid-template-columns:repeat(1,1fr)} }
+.widget{padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(106,123,255,0.06), rgba(80,199,255,0.02));min-height:84px;display:flex;flex-direction:column;justify-content:space-between}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:980px){ .form-grid{grid-template-columns:1fr} }
+input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(2,6,23,0.6);color:#e8f6ff}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+.thumb-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumb-row img{width:110px;height:78px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.04)}
+.modal{position:fixed;inset:0;background:rgba(2,6,23,0.7);display:grid;place-items:center;z-index:80;padding:14px}
+.modal .panel{max-width:980px;width:96%;max-height:92vh;overflow:auto;background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)}
+.toast{position:fixed;right:18px;bottom:18px;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#02111a;padding:10px 14px;border-radius:10px;display:none}
+.status{padding:4px 8px;border-radius:999px;font-weight:700}
+.status.PENDING{background:rgba(255,189,89,0.12);color:#ffd99c}
+.status.SAVED{background:rgba(91,140,255,0.12);color:#cfe1ff}
+.status.APPROVED{background:rgba(30,194,139,0.12);color:#b8f0db}
+.status.REJECTED{background:rgba(255,93,93,0.12);color:#ffc9c9}
+.footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="brand">
+      <img id="companyLogo" src="" alt="logo">
+      <div>
+        <div class="title" id="companyTitle">Busmate</div>
+        <div class="small">Fuel & AdBlue Utilisation</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div style="text-align:right">
+      <div id="userDisplay" class="small">Not signed</div>
+      <div id="userRole" class="small">Role: -</div>
+    </div>
+    <div style="width:12px"></div>
+    <button id="btnSignOut" class="btn hidden">Sign out</button>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="small">Welcome</div>
+            <div style="font-weight:700" id="welcomeName">Guest</div>
+          </div>
+          <div><button id="btnOpenLogin" class="btn primary">Sign In</button></div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <div class="small">Navigation</div>
+        <div id="menu" style="margin-top:8px">
+          <button data-view="home" class="active">Home</button>
+          <button data-view="add">Add Fuel Request</button>
+          <button data-view="myreq">My Requests</button>
+          <button data-view="approve">Approver Console</button>
+          <button data-view="reports">Reports</button>
+          <button data-view="vehicles">Vehicles</button>
+          <button data-view="vendors">Vendors</button>
+          <button data-view="users">Users</button>
+          <button data-view="company">Company</button>
+          <button data-view="changepwd">Change Password</button>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <div class="small">Quick Stats</div>
+        <div style="margin-top:8px">
+          <div class="small">Total Requests</div>
+          <div style="font-weight:800;font-size:20px" id="statTotal">0</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <div class="small" id="statPending">Pending: 0</div>
+            <div class="small" id="statApproved">Approved: 0</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <!-- Home -->
+      <section id="home" class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Dashboard</h2><div class="small">Overview</div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="widgets" id="widgetsArea">
+          <div class="widget"><div class="small">Total Requests</div><div style="font-weight:800;font-size:18px" id="w_total">0</div></div>
+          <div class="widget"><div class="small">Total Liters</div><div style="font-weight:800;font-size:18px" id="w_liters">0.00</div></div>
+          <div class="widget"><div class="small">Approved</div><div style="font-weight:800;font-size:18px" id="w_approved">0</div></div>
+          <div class="widget"><div class="small">Pending</div><div style="font-weight:800;font-size:18px" id="w_pending">0</div></div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">Recent Activity</h3><div class="small" id="actCount">0</div>
+          </div>
+          <div style="height:8px"></div>
+          <div style="max-height:220px;overflow:auto">
+            <table class="table">
+              <thead><tr><th>#</th><th>When</th><th>User</th><th>Action</th></tr></thead>
+              <tbody id="activityBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add -->
+      <section id="add" class="card hidden">
+        <h2>Add Fuel Request</h2>
+        <form id="formAdd" class="form-grid" style="margin-top:10px">
+          <div><label>Driver (auto)</label><input id="addDriver" disabled></div>
+          <div><label>Vehicle</label><select id="addVehicle"></select></div>
+          <div><label>Type</label><select id="addType"><option>DIESEL</option><option>PETROL</option><option>ADBLUE</option><option>OTHER</option></select></div>
+          <div><label>Vendor</label><select id="addVendor"></select></div>
+          <div><label>Today Rate</label><input id="addRate" type="number" step="0.01"></div>
+          <div><label>Consumption (liters)</label><input id="addLiters" type="number" step="0.01"></div>
+          <div><label>Total (auto)</label><input id="addTotal" readonly></div>
+          <div><label>Odometer (KM)</label><input id="addKM" type="number"></div>
+          <div><label>Remark (optional)</label><textarea id="addRemark"></textarea></div>
+
+          <div><label>Station Photo</label><input id="addPhotoStation" type="file" accept="image/*" capture="environment"><div class="thumb-row" id="thumbStation"></div></div>
+          <div><label>Odometer Photo</label><input id="addPhotoOdo" type="file" accept="image/*" capture="environment"><div class="thumb-row" id="thumbOdo"></div></div>
+          <div><label>Receipt Photo</label><input id="addPhotoReceipt" type="file" accept="image/*" capture="environment"><div class="thumb-row" id="thumbReceipt"></div></div>
+
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px">
+            <button type="reset" class="btn">Reset</button>
+            <button type="submit" class="btn primary">Submit Request</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- My Requests -->
+      <section id="myreq" class="card hidden">
+        <h2>My Requests</h2>
+        <div style="margin-top:8px">
+          <input id="mrSearch" placeholder="search by req#, vendor, remark" style="width:40%">
+          <label style="margin-left:8px"><input id="mrShowApproved" type="checkbox"> Show Approved</label>
+        </div>
+        <div style="height:10px"></div>
+        <div style="max-height:420px;overflow:auto" class="card">
+          <table class="table"><thead><tr><th>Req#</th><th>Date</th><th>Vehicle</th><th>Liters</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="myReqBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- Approver -->
+      <section id="approve" class="card hidden">
+        <h2>Approver Console</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div><label>Status</label><select id="apStatus"><option>All</option><option>PENDING</option><option>SAVED</option><option>APPROVED</option><option>REJECTED</option></select></div>
+          <div><label>Vehicle</label><select id="apVehicle"></select></div>
+          <div><label>Vendor</label><select id="apVendor"></select></div>
+        </div>
+        <div style="height:10px"></div>
+        <div style="max-height:420px;overflow:auto" class="card">
+          <table class="table"><thead><tr><th>Req#</th><th>Date</th><th>Vehicle</th><th>Driver</th><th>Liters</th><th>Rate</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="apBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- Reports -->
+      <section id="reports" class="card hidden">
+        <h2>Reports</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div><label>From</label><input type="date" id="repFrom"></div>
+          <div><label>To</label><input type="date" id="repTo"></div>
+          <div><label>Status</label><select id="repStatus"><option>ALL</option><option>PENDING</option><option>SAVED</option><option>APPROVED</option><option>REJECTED</option></select></div>
+        </div>
+        <div style="height:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="btnRunReport" class="btn">Run</button>
+          <button id="btnExportCSV" class="btn">Export CSV</button>
+        </div>
+        <div style="height:10px"></div>
+        <div style="max-height:420px;overflow:auto" class="card">
+          <table class="table"><thead><tr><th>Req#</th><th>Date</th><th>Vehicle</th><th>Driver</th><th>Liters</th><th>Total</th><th>Status</th><th>Remark</th></tr></thead><tbody id="repBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- Vehicles -->
+      <section id="vehicles" class="card hidden">
+        <h2>Vehicles</h2>
+        <form id="vehForm" class="form-grid">
+          <input type="hidden" id="vehId">
+          <div><label>Number</label><input id="vehNumber"></div>
+          <div><label>Model</label><input id="vehModel"></div>
+          <div><label>Active</label><select id="vehActive"><option value="true">Yes</option><option value="false">No</option></select></div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px"><button type="reset" class="btn">Reset</button><button id="vehSave" class="btn primary">Save</button></div>
+        </form>
+        <div style="height:10px"></div>
+        <div style="max-height:320px;overflow:auto" class="card"><table class="table"><thead><tr><th>ID</th><th>Number</th><th>Model</th><th>Active</th><th>Actions</th></tr></thead><tbody id="vehBody"></tbody></table></div>
+      </section>
+
+      <!-- Vendors -->
+      <section id="vendors" class="card hidden">
+        <h2>Vendors</h2>
+        <form id="venForm" class="form-grid">
+          <input type="hidden" id="venId">
+          <div><label>Name</label><input id="venName"></div>
+          <div><label>City</label><input id="venCity"></div>
+          <div><label>Active</label><select id="venActive"><option value="true">Yes</option><option value="false">No</option></select></div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px"><button type="reset" class="btn">Reset</button><button id="venSave" class="btn primary">Save</button></div>
+        </form>
+        <div style="height:10px"></div>
+        <div style="max-height:320px;overflow:auto" class="card"><table class="table"><thead><tr><th>ID</th><th>Name</th><th>City</th><th>Active</th><th>Actions</th></tr></thead><tbody id="venBody"></tbody></table></div>
+      </section>
+
+      <!-- Users -->
+      <section id="users" class="card hidden">
+        <h2>Users</h2>
+        <form id="usrForm" class="form-grid">
+          <input type="hidden" id="usrId">
+          <div><label>Username</label><input id="usrName"></div>
+          <div><label>Password</label><input id="usrPass"></div>
+          <div><label>Role</label><select id="usrRole"><option>driver</option><option>approver</option><option>admin</option></select></div>
+          <div style="grid-column:1/-1"><label>Widgets</label><div style="display:flex;flex-wrap:wrap;gap:8px">
+            <label><input class="wchk" type="checkbox" value="home" checked>Home</label>
+            <label><input class="wchk" type="checkbox" value="add" checked>Add</label>
+            <label><input class="wchk" type="checkbox" value="myreq" checked>MyReq</label>
+            <label><input class="wchk" type="checkbox" value="approve">Approve</label>
+            <label><input class="wchk" type="checkbox" value="reports">Reports</label>
+            <label><input class="wchk" type="checkbox" value="vehicles">Vehicles</label>
+            <label><input class="wchk" type="checkbox" value="vendors">Vendors</label>
+            <label><input class="wchk" type="checkbox" value="users">Users</label>
+            <label><input class="wchk" type="checkbox" value="company">Company</label>
+            <label><input class="wchk" type="checkbox" value="changepwd" checked>ChangePwd</label>
+            <label><input class="wchk" type="checkbox" value="activity" checked>Activity</label>
+          </div></div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px"><button type="reset" class="btn">Reset</button><button id="usrSave" class="btn primary">Save</button></div>
+        </form>
+        <div style="height:10px"></div>
+        <div style="max-height:320px;overflow:auto" class="card"><table class="table"><thead><tr><th>Username</th><th>Role</th><th>Widgets</th><th>Actions</th></tr></thead><tbody id="usrBody"></tbody></table></div>
+      </section>
+
+      <!-- Company -->
+      <section id="company" class="card hidden">
+        <h2>Company</h2>
+        <form id="companyForm" class="form-grid">
+          <div><label>Company Name</label><input id="compName"></div>
+          <div><label>Logo (optional)</label><input id="compLogo" type="file" accept="image/*"></div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px"><button id="compSave" class="btn primary">Save</button></div>
+        </form>
+      </section>
+
+      <!-- Change password -->
+      <section id="changepwd" class="card hidden">
+        <h2>Change Password</h2>
+        <form id="pwdForm" class="form-grid">
+          <div><label>Username</label><input id="pwdUser" disabled></div>
+          <div><label>Current</label><input id="pwdCurrent" type="password"></div>
+          <div><label>New</label><input id="pwdNew" type="password"></div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px"><button id="pwdSave" class="btn primary">Change Password</button></div>
+        </form>
+      </section>
+
+      <div style="height:20px"></div>
+      <div class="footer">Busmate • Fuel log & approvals</div>
+    </main>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Login modal -->
+<div id="modalLogin" class="modal hidden" aria-hidden="true"><div class="panel">
+  <h3>Sign in</h3>
+  <form id="loginForm" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div><label>Username</label><input id="loginUser" autocomplete="username"></div>
+    <div><label>Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px"><button type="button" id="loginCancel" class="btn">Cancel</button><button type="submit" class="btn primary">Sign In</button></div>
+  </form>
+  <div class="small" style="margin-top:8px">Use users stored under /users in your Realtime DB.</div>
+</div></div>
+
+<!-- Edit modal -->
+<div id="modalEdit" class="modal hidden" aria-hidden="true"><div class="panel">
+  <h3>Edit Request <span id="editReqNo"></span></h3>
+  <form id="editForm" class="form-grid">
+    <div><label>ID</label><input id="editId" disabled></div>
+    <div><label>Vehicle</label><select id="editVehicle"></select></div>
+    <div><label>Vendor</label><select id="editVendor"></select></div>
+    <div><label>Type</label><select id="editType"><option>DIESEL</option><option>PETROL</option><option>ADBLUE</option><option>OTHER</option></select></div>
+    <div><label>Rate</label><input id="editRate" type="number" step="0.01"></div>
+    <div><label>Liters</label><input id="editLiters" type="number" step="0.01"></div>
+    <div><label>Total</label><input id="editTotal" readonly></div>
+    <div><label>KM</label><input id="editKM" type="number"></div>
+    <div style="grid-column:1/-1"><label>Remark</label><textarea id="editRemark"></textarea></div>
+
+    <div><label>Odometer Photo</label><div class="thumb-row" id="editThumbOdo"></div><input id="editFileOdo" type="file" accept="image/*"><div style="margin-top:8px"><button id="editRemoveOdo" class="btn">Remove Odo</button></div></div>
+    <div><label>Station Photo</label><div class="thumb-row" id="editThumbStation"></div><input id="editFileStation" type="file" accept="image/*"><div style="margin-top:8px"><button id="editRemoveStation" class="btn">Remove Station</button></div></div>
+    <div><label>Receipt Photo</label><div class="thumb-row" id="editThumbReceipt"></div><input id="editFileReceipt" type="file" accept="image/*"><div style="margin-top:8px"><button id="editRemoveReceipt" class="btn">Remove Receipt</button></div></div>
+
+    <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px">
+      <button id="editSave" type="button" class="btn">Save</button>
+      <button id="editApprove" type="button" class="btn primary">Approve</button>
+      <button id="editReject" type="button" class="btn">Reject</button>
+      <button id="editClose" type="button" class="btn">Close</button>
+    </div>
+  </form>
+</div></div>
+
+<script type="module">
+/* =========================
+   6.html main script
+   Imports db from config.js (which initializes Firebase)
+   ========================= */
+import { db } from './config.js';
+import { ref, get, set, update, push, remove, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+
+/* ---------- helpers & state ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const toastEl = $('#toast');
+function toast(msg, t=1800){ toastEl.textContent = msg; toastEl.style.display='block'; setTimeout(()=>toastEl.style.display='none', t); }
+function esc(s=''){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+let state = { user:null, vehicles:{}, vendors:{}, requests:{}, activity:{}, company:{}, users:{} };
+
+/* ---------- realtime listeners ---------- */
+function attach(){
+  onValue(ref(db,'vehicles'), s=>{ state.vehicles = s.exists()? s.val() : {}; fillVehicleSelects(); renderVehicles(); renderDashboard(); });
+  onValue(ref(db,'vendors'), s=>{ state.vendors = s.exists()? s.val() : {}; fillVendorSelects(); renderVendors(); renderDashboard(); });
+  onValue(ref(db,'fuelRequests'), s=>{ state.requests = s.exists()? s.val() : {}; renderDashboard(); renderMyRequests(); renderApprovals(); });
+  onValue(ref(db,'activity'), s=>{ state.activity = s.exists()? s.val() : {}; renderActivity(); });
+  onValue(ref(db,'company'), s=>{ state.company = s.exists()? s.val() : {}; renderCompany(); });
+  onValue(ref(db,'users'), s=>{ state.users = s.exists()? s.val() : {}; renderUsers(); });
+}
+attach();
+
+/* ---------- seed DB if empty (first-run convenience) ---------- */
+async function seedIfEmpty(){
+  try{
+    const v = await get(ref(db,'vehicles'));
+    if(!v.exists()) await set(ref(db,'vehicles'), { v1:{number:'MH12AB1234',model:'Volvo',active:true} });
+    const vn = await get(ref(db,'vendors'));
+    if(!vn.exists()) await set(ref(db,'vendors'), { ven1:{name:'Ram petrol pump',city:'Pune',active:true}, ven2:{name:'Bombay petrol pump',city:'Mumbai',active:true} });
+    const co = await get(ref(db,'company'));
+    if(!co.exists()) await set(ref(db,'company'), { name:'Busmate', logo:'' });
+    const u = await get(ref(db,'users'));
+    if(!u.exists()) await set(ref(db,'users'), {
+      admin:{password:'admin123',role:'admin',displayName:'Administrator',widgets:{home:true,add:true,myreq:true,approve:true,reports:true,vehicles:true,vendors:true,users:true,company:true,changepwd:true,activity:true}},
+      approver1:{password:'approver123',role:'approver',displayName:'Approver One',widgets:{home:true,myreq:true,approve:true,changepwd:true,activity:true}},
+      driver1:{password:'driver123',role:'driver',displayName:'Driver One',widgets:{home:true,add:true,myreq:true,changepwd:true}}
+    });
+    const ctr = await get(ref(db,'counters/requests')); if(!ctr.exists()) await set(ref(db,'counters/requests'), 0);
+  }catch(e){ console.warn('seed error', e); }
+}
+seedIfEmpty();
+
+/* ---------- logging ---------- */
+async function addActivity(action, details=''){
+  try{
+    const p = push(ref(db,'activity'));
+    await set(p, { ts: Date.now(), user: state.user ? state.user.username : 'anon', action, details });
+  }catch(e){ console.error('activity error', e); }
+}
+
+/* ---------- auth (username stored under /users/{username}) ---------- */
+$('#btnOpenLogin').addEventListener('click', ()=>{ $('#modalLogin').classList.remove('hidden'); $('#modalLogin').setAttribute('aria-hidden','false'); });
+$('#loginCancel').addEventListener('click', ()=>{ $('#modalLogin').classList.add('hidden'); $('#modalLogin').setAttribute('aria-hidden','true'); });
+
+$('#loginForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const username = $('#loginUser').value.trim();
+  const password = $('#loginPass').value;
+  if(!username || !password){ toast('Enter username and password'); return; }
+  try{
+    const snap = await get(ref(db, `users/${username}`));
+    if(!snap.exists()){ toast('User not found'); return; }
+    const u = snap.val();
+    if(String(u.password) !== String(password)){ toast('Invalid password'); return; }
+    state.user = { username, role:(u.role||'driver').toLowerCase(), displayName: u.displayName || username, widgets: u.widgets || {} };
+    onLogin();
+    $('#modalLogin').classList.add('hidden'); $('#modalLogin').setAttribute('aria-hidden','true');
+    addActivity('login', `user:${username}`);
+    toast('Signed in');
+  }catch(e){ console.error(e); toast('Login error'); }
+});
+
+$('#btnSignOut').addEventListener('click', ()=>{ state.user=null; onLogout(); toast('Signed out'); });
+
+function onLogin(){
+  $('#userDisplay').textContent = state.user.displayName;
+  $('#userRole').textContent = `Role: ${state.user.role.toUpperCase()}`;
+  $('#welcomeName').textContent = state.user.displayName;
+  $('#btnSignOut').classList.remove('hidden');
+  $('#addDriver').value = state.user.username;
+  $('#pwdUser').value = state.user.username;
+  applyWidgets();
+  showView('home'); // IMPORTANT: always land on HOME after login
+  if(state.company && state.company.name) document.title = `${state.company.name} — Busmate`;
+  refreshAll();
+}
+function onLogout(){
+  $('#userDisplay').textContent = 'Not signed';
+  $('#userRole').textContent = 'Role: -';
+  $('#welcomeName').textContent = 'Guest';
+  $('#btnSignOut').classList.add('hidden');
+  applyWidgets();
+  showView('home'); // show home for anonymous too
+}
+
+/* ---------- RBAC widgets ---------- */
+function applyWidgets(){
+  const isAdmin = state.user && state.user.role === 'admin';
+  const widgets = (state.user && state.user.widgets) || {};
+  $$('#menu button').forEach(btn=>{
+    const key = btn.getAttribute('data-view');
+    const viewId = document.getElementById(key);
+    const allowed = isAdmin || widgets[key] || key === 'home';
+    btn.style.display = allowed ? '' : 'none';
+    if(viewId) viewId.classList.toggle('hidden', !allowed);
+  });
+}
+
+/* ---------- navigation ---------- */
+$$('#menu button').forEach(btn => btn.addEventListener('click', ()=>{
+  const key = btn.getAttribute('data-view');
+  if(!canAccess(key)){ toast('Access restricted'); return; }
+  $$('#menu button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  showView(key);
+}));
+function canAccess(key){
+  if(!state.user) return key === 'home';
+  if(state.user.role === 'admin') return true;
+  return !!(state.user.widgets && state.user.widgets[key]);
+}
+function showView(key){
+  const views = ['home','add','myreq','approve','reports','vehicles','vendors','users','company','changepwd'];
+  views.forEach(v => { const el = document.getElementById(v); if(el) el.classList.add('hidden'); });
+  const target = document.getElementById(key);
+  if(target) target.classList.remove('hidden');
+}
+
+/* ---------- utility: file -> base64 ---------- */
+function fileToBase64(file){
+  return new Promise((res, rej)=>{
+    const reader = new FileReader();
+    reader.onload = ()=> res(reader.result);
+    reader.onerror = e=> rej(e);
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- atomic request number ---------- */
+async function nextReqNo(){
+  try{
+    const ctrRef = ref(db,'counters/requests');
+    const tx = await runTransaction(ctrRef, cur => (cur || 0) + 1);
+    return tx.snapshot.val();
+  }catch(e){ console.error('counter tx failed', e); return Date.now(); }
+}
+
+/* ---------- Add Request ---------- */
+$('#addRate').addEventListener('input', calcAddTotal);
+$('#addLiters').addEventListener('input', calcAddTotal);
+function calcAddTotal(){ $('#addTotal').value = (Number($('#addRate').value||0) * Number($('#addLiters').value||0)).toFixed(2); }
+
+['#addPhotoStation','#addPhotoOdo','#addPhotoReceipt'].forEach(sel=>{
+  const el = $(sel); if(!el) return;
+  el.addEventListener('change', ()=> {
+    const file = el.files && el.files[0];
+    const wrap = sel.includes('Station') ? $('#thumbStation') : sel.includes('Odo') ? $('#thumbOdo') : $('#thumbReceipt');
+    wrap.innerHTML = '';
+    if(file){ const img = document.createElement('img'); img.src = URL.createObjectURL(file); wrap.appendChild(img); }
+  });
+});
+
+$('#formAdd').addEventListener('submit', async ev=>{
+  ev.preventDefault();
+  if(!state.user){ toast('Please sign in'); $('#modalLogin').classList.remove('hidden'); return; }
+  const vehicle = $('#addVehicle').value; const vendor = $('#addVendor').value;
+  const rate = Number($('#addRate').value||0), liters = Number($('#addLiters').value||0);
+  if(!vehicle || !vendor || rate<=0 || liters<=0){ toast('Please fill required fields'); return; }
+  const total = rate * liters;
+  const km = Number($('#addKM').value||0); const remark = $('#addRemark').value || '';
+  const imgStation = $('#addPhotoStation').files[0] ? await fileToBase64($('#addPhotoStation').files[0]) : '';
+  const imgOdo = $('#addPhotoOdo').files[0] ? await fileToBase64($('#addPhotoOdo').files[0]) : '';
+  const imgReceipt = $('#addPhotoReceipt').files[0] ? await fileToBase64($('#addPhotoReceipt').files[0]) : '';
+  const reqNo = await nextReqNo(); const id = String(reqNo);
+  const rec = { id, reqNo:Number(id), driver:state.user.username, driverDisplayName:state.user.displayName||state.user.username, vehicle, vendor, type:$('#addType').value, rate, liters, total, km, remark, images:{station:imgStation,odo:imgOdo,receipt:imgReceipt}, status:'PENDING', createdAt:Date.now(), updatedAt:Date.now() };
+  try{ await set(ref(db, `fuelRequests/${id}`), rec); addActivity('create_request', `#${id} by ${state.user.username}`); toast('Request submitted'); $('#formAdd').reset(); $('#thumbStation').innerHTML=''; $('#thumbOdo').innerHTML=''; $('#thumbReceipt').innerHTML=''; }catch(e){ console.error(e); toast('Submit failed'); }
+});
+
+/* ---------- My requests ---------- */
+$('#mrSearch').addEventListener('input', renderMyRequests);
+$('#mrShowApproved').addEventListener('change', renderMyRequests);
+
+function renderMyRequests(){
+  const tbody = $('#myReqBody'); if(!tbody) return; tbody.innerHTML='';
+  const q = $('#mrSearch').value.trim().toLowerCase(); const showApproved = $('#mrShowApproved').checked;
+  const arr = Object.values(state.requests||{}).sort((a,b)=>Number(b.reqNo)-Number(a.reqNo));
+  let rows = arr.filter(r=> r.driver === (state.user ? state.user.username : null));
+  if(!showApproved) rows = rows.filter(r=> r.status !== 'APPROVED');
+  if(q) rows = rows.filter(r=> String(r.reqNo).includes(q) || (r.remark||'').toLowerCase().includes(q) || (state.vendors[r.vendor]?.name||'').toLowerCase().includes(q));
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.reqNo}</td><td>${new Date(r.createdAt).toLocaleDateString()}</td><td>${esc(state.vehicles[r.vehicle]?.number||r.vehicle)}</td><td>${Number(r.liters||0).toFixed(2)}</td><td>₹${Number(r.total||0).toFixed(2)}</td><td><span class="status ${r.status}">${r.status}</span></td><td><button class="btn" data-view="${r.id}">View</button> ${(r.status==='PENDING' || r.status==='SAVED') ? `<button class="btn" data-delete="${r.id}">Delete</button>` : '' }</td>`;
+    tbody.appendChild(tr);
+  });
+}
+$('#myReqBody').addEventListener('click', async ev=>{
+  const id = ev.target.dataset.view; if(id){ openEditModal(id); return; }
+  const del = ev.target.dataset.delete; if(del){ if(!confirm('Delete request?')) return; try{ await remove(ref(db, `fuelRequests/${del}`)); addActivity('delete_request', `#${del}`); toast('Deleted'); }catch(e){ console.error(e); toast('Delete failed'); } }
+});
+
+/* ---------- Approver console ---------- */
+$('#apStatus').addEventListener('change', renderApprovals);
+$('#apVehicle').addEventListener('change', renderApprovals);
+$('#apVendor').addEventListener('change', renderApprovals);
+
+function renderApprovals(){
+  const tbody = $('#apBody'); if(!tbody) return; tbody.innerHTML='';
+  const st = $('#apStatus').value, veh = $('#apVehicle').value, vend = $('#apVendor').value;
+  const arr = Object.values(state.requests||{}).sort((a,b)=>Number(b.reqNo)-Number(a.reqNo));
+  const rows = arr.filter(r=>{
+    if(st && st!=='All' && r.status !== st) return false;
+    if(veh && veh!=='All' && r.vehicle !== veh) return false;
+    if(vend && vend!=='All' && r.vendor !== vend) return false;
+    return true;
+  });
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.reqNo}</td><td>${new Date(r.createdAt).toLocaleDateString()}</td><td>${esc(state.vehicles[r.vehicle]?.number||r.vehicle)}</td><td>${esc(r.driverDisplayName||r.driver)}</td><td>${Number(r.liters||0).toFixed(2)}</td><td>${Number(r.rate||0).toFixed(2)}</td><td>₹${Number(r.total||0).toFixed(2)}</td><td><span class="status ${r.status}">${r.status}</span></td><td><button class="btn" data-edit="${r.id}">Edit</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+$('#apBody').addEventListener('click', ev=>{ const id = ev.target.dataset.edit; if(id) openEditModal(id); });
+
+/* ---------- Edit modal ---------- */
+function openEditModal(id){
+  const rec = state.requests[id]; if(!rec){ toast('Request not found'); return; }
+  $('#modalEdit').classList.remove('hidden'); $('#modalEdit').setAttribute('aria-hidden','false');
+  $('#editReqNo').textContent = `#${rec.reqNo}`; $('#editId').value = id;
+  $('#editVehicle').value = rec.vehicle; $('#editVendor').value = rec.vendor; $('#editType').value = rec.type || 'DIESEL';
+  $('#editRate').value = rec.rate || 0; $('#editLiters').value = rec.liters || 0; $('#editTotal').value = (Number(rec.rate||0) * Number(rec.liters||0)).toFixed(2);
+  $('#editKM').value = rec.km || 0; $('#editRemark').value = rec.remark || '';
+  $('#editThumbOdo').innerHTML = rec.images?.odo ? `<img src="${rec.images.odo}">` : 'No image';
+  $('#editThumbStation').innerHTML = rec.images?.station ? `<img src="${rec.images.station}">` : 'No image';
+  $('#editThumbReceipt').innerHTML = rec.images?.receipt ? `<img src="${rec.images.receipt}">` : 'No image';
+  const canApprove = state.user && (state.user.role === 'admin' || state.user.role === 'approver');
+  $('#editApprove').style.display = canApprove ? '' : 'none';
+  $('#editReject').style.display = canApprove ? '' : 'none';
+  // prevent save for non-admin if already approved
+  if(rec.status === 'APPROVED' && !(state.user && state.user.role === 'admin')) $('#editSave').disabled = true; else $('#editSave').disabled = false;
+}
+$('#editClose').addEventListener('click', ()=>{ $('#modalEdit').classList.add('hidden'); $('#modalEdit').setAttribute('aria-hidden','true'); });
+
+$('#editRate').addEventListener('input', ()=> $('#editTotal').value = (Number($('#editRate').value||0) * Number($('#editLiters').value||0)).toFixed(2));
+$('#editLiters').addEventListener('input', ()=> $('#editTotal').value = (Number($('#editRate').value||0) * Number($('#editLiters').value||0)).toFixed(2));
+
+$('#editSave').addEventListener('click', async ()=>{
+  const id = $('#editId').value; if(!id) return;
+  const snap = await get(ref(db, `fuelRequests/${id}`)); if(!snap.exists()){ toast('Missing'); return; }
+  const existing = snap.val();
+  if(existing.status === 'APPROVED' && !(state.user && state.user.role === 'admin')){ toast('Approved can only be modified by admin'); return; }
+  const rate = Number($('#editRate').value||0), liters = Number($('#editLiters').value||0), total = rate * liters;
+  const updates = { rate, liters, total, vehicle:$('#editVehicle').value, vendor:$('#editVendor').value, type:$('#editType').value, km:Number($('#editKM').value||0), remark:$('#editRemark').value||'', status:'SAVED', updatedAt:Date.now() };
+  try{
+    if($('#editFileOdo').files[0]) updates['images/odo'] = await fileToBase64($('#editFileOdo').files[0]);
+    if($('#editFileStation').files[0]) updates['images/station'] = await fileToBase64($('#editFileStation').files[0]);
+    if($('#editFileReceipt').files[0]) updates['images/receipt'] = await fileToBase64($('#editFileReceipt').files[0]);
+    const flat = {}; for(const k in updates) flat[`fuelRequests/${id}/${k}`] = updates[k];
+    await update(ref(db), flat);
+    addActivity('save_request', `#${id} by ${state.user? state.user.username:'unknown'}`);
+    toast('Saved');
+    $('#modalEdit').classList.add('hidden');
+  }catch(e){ console.error(e); toast('Save failed'); }
+});
+
+$('#editApprove').addEventListener('click', async ()=>{
+  if(!(state.user && (state.user.role==='admin' || state.user.role==='approver'))){ toast('Not allowed'); return; }
+  const id = $('#editId').value; try{ await update(ref(db, `fuelRequests/${id}`), { status:'APPROVED', approvedBy: state.user.username, updatedAt:Date.now() }); addActivity('approve', `#${id} by ${state.user.username}`); toast('Approved'); $('#modalEdit').classList.add('hidden'); }catch(e){ console.error(e); toast('Approve failed'); }
+});
+$('#editReject').addEventListener('click', async ()=>{ if(!(state.user && (state.user.role==='admin' || state.user.role==='approver'))){ toast('Not allowed'); return; } const id = $('#editId').value; try{ await update(ref(db, `fuelRequests/${id}`), { status:'REJECTED', approvedBy: state.user.username, updatedAt:Date.now() }); addActivity('reject', `#${id} by ${state.user.username}`); toast('Rejected'); $('#modalEdit').classList.add('hidden'); }catch(e){ console.error(e); toast('Reject failed'); } });
+
+$('#editRemoveOdo').addEventListener('click', async ()=>{ const id = $('#editId').value; if(!id) return; if(!confirm('Remove odometer image?')) return; await update(ref(db, `fuelRequests/${id}`), {'images/odo':''}); addActivity('remove_image', `odo #${id}`); $('#editThumbOdo').innerHTML='No image'; toast('Removed'); });
+$('#editRemoveStation').addEventListener('click', async ()=>{ const id = $('#editId').value; if(!id) return; if(!confirm('Remove station image?')) return; await update(ref(db, `fuelRequests/${id}`), {'images/station':''}); addActivity('remove_image', `station #${id}`); $('#editThumbStation').innerHTML='No image'; toast('Removed'); });
+$('#editRemoveReceipt').addEventListener('click', async ()=>{ const id = $('#editId').value; if(!id) return; if(!confirm('Remove receipt image?')) return; await update(ref(db, `fuelRequests/${id}`), {'images/receipt':''}); addActivity('remove_image', `receipt #${id}`); $('#editThumbReceipt').innerHTML='No image'; toast('Removed'); });
+
+/* ---------- Vehicles CRUD ---------- */
+$('#vehSave').addEventListener('click', async ev=>{ ev.preventDefault(); if(!(state.user && state.user.role==='admin')){ toast('Admin only'); return; } const id = $('#vehId').value || push(ref(db,'vehicles')).key; const data = { number:$('#vehNumber').value.trim(), model:$('#vehModel').value.trim(), active: $('#vehActive').value==='true' }; try{ await set(ref(db, `vehicles/${id}`), data); $('#vehForm').reset(); $('#vehId').value=''; addActivity('save_vehicle', data.number); toast('Saved'); }catch(e){ console.error(e); toast('Vehicle save failed'); } });
+$('#vehBody').addEventListener('click', async ev=>{ const id = ev.target.dataset.editveh; if(id){ const s = await get(ref(db, `vehicles/${id}`)); if(!s.exists()) return; const v=s.val(); $('#vehId').value=id; $('#vehNumber').value=v.number||''; $('#vehModel').value=v.model||''; $('#vehActive').value=String(v.active!==false); } const del = ev.target.dataset.delveh; if(del){ if(!confirm('Delete vehicle?')) return; await remove(ref(db, `vehicles/${del}`)); addActivity('delete_vehicle', del); toast('Deleted'); } });
+
+/* ---------- Vendors CRUD ---------- */
+$('#venSave').addEventListener('click', async ev=>{ ev.preventDefault(); if(!(state.user && state.user.role==='admin')){ toast('Admin only'); return; } const id = $('#venId').value || push(ref(db,'vendors')).key; const data = { name:$('#venName').value.trim(), city:$('#venCity').value.trim(), active: $('#venActive').value==='true' }; try{ await set(ref(db,`vendors/${id}`), data); $('#venForm').reset(); $('#venId').value=''; addActivity('save_vendor', data.name); toast('Saved'); }catch(e){ console.error(e); toast('Vendor save failed'); } });
+$('#venBody').addEventListener('click', async ev=>{ const id = ev.target.dataset.editven; if(id){ const s = await get(ref(db, `vendors/${id}`)); if(!s.exists()) return; const v=s.val(); $('#venId').value=id; $('#venName').value=v.name||''; $('#venCity').value=v.city||''; $('#venActive').value=String(v.active!==false); } const del = ev.target.dataset.delven; if(del){ if(!confirm('Delete vendor?')) return; await remove(ref(db, `vendors/${del}`)); addActivity('delete_vendor', del); toast('Deleted'); } });
+
+/* ---------- Users CRUD ---------- */
+$('#usrSave').addEventListener('click', async ev=>{ ev.preventDefault(); if(!(state.user && state.user.role==='admin')){ toast('Admin only'); return; } const username = $('#usrName').value.trim(); if(!username){ toast('Username required'); return; } const data = { password: $('#usrPass').value||'', role: $('#usrRole').value, displayName: username, widgets: {} }; $$('.wchk').forEach(cb=> data.widgets[cb.value] = cb.checked ); try{ await set(ref(db, `users/${username}`), data); $('#usrForm').reset(); addActivity('save_user', username); toast('Saved'); }catch(e){ console.error(e); toast('User save failed'); } });
+$('#usrBody').addEventListener('click', async ev=>{ const id = ev.target.dataset.edituser; if(id){ const s = await get(ref(db, `users/${id}`)); if(!s.exists()) return; const u=s.val(); $('#usrName').value=id; $('#usrPass').value=u.password||''; $('#usrRole').value=u.role||'driver'; $$('.wchk').forEach(cb=> cb.checked = !!(u.widgets && u.widgets[cb.value])); } const del = ev.target.dataset.deluser; if(del){ if(!confirm('Delete user?')) return; await remove(ref(db, `users/${del}`)); addActivity('delete_user', del); toast('Deleted'); } });
+
+/* ---------- Company save ---------- */
+$('#compSave').addEventListener('click', async ev=>{ ev.preventDefault(); if(!(state.user && state.user.role==='admin')){ toast('Admin only'); return; } const name = $('#compName').value.trim() || 'Busmate'; let logo = state.company.logo || ''; if($('#compLogo').files[0]) logo = await fileToBase64($('#compLogo').files[0]); try{ await set(ref(db,'company'), { name, logo }); addActivity('save_company', name); toast('Saved'); }catch(e){ console.error(e); toast('Company save failed'); } });
+
+/* ---------- Change password ---------- */
+$('#pwdSave').addEventListener('click', async ev=>{ ev.preventDefault(); if(!state.user){ toast('Sign in first'); return; } const username = state.user.username; const curr = $('#pwdCurrent').value; const nw = $('#pwdNew').value; const snap = await get(ref(db, `users/${username}`)); if(!snap.exists()){ toast('Profile missing'); return; } const p=snap.val(); if(String(p.password)!==String(curr)){ toast('Current password mismatch'); return; } await update(ref(db, `users/${username}`), { password: nw }); addActivity('change_password', username); toast('Password updated'); $('#pwdForm').reset(); });
+
+/* ---------- Reports ---------- */
+$('#btnRunReport').addEventListener('click', ()=>{
+  const from = $('#repFrom').value; const to = $('#repTo').value; const status = $('#repStatus').value || 'ALL';
+  const arr = Object.values(state.requests||{}).filter(r=>{
+    if(status!=='ALL' && r.status!==status) return false;
+    if(from && (r.createdAt ? new Date(r.createdAt).toISOString().slice(0,10) : '') < from) return false;
+    if(to && (r.createdAt ? new Date(r.createdAt).toISOString().slice(0,10) : '') > to) return false;
+    return true;
+  }).sort((a,b)=>Number(a.reqNo)-Number(b.reqNo));
+  const tbody = $('#repBody'); if(!tbody) return; tbody.innerHTML='';
+  arr.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${r.reqNo}</td><td>${new Date(r.createdAt).toLocaleDateString()}</td><td>${esc(state.vehicles[r.vehicle]?.number||r.vehicle)}</td><td>${esc(r.driverDisplayName||r.driver)}</td><td>${Number(r.liters||0).toFixed(2)}</td><td>₹${Number(r.total||0).toFixed(2)}</td><td>${r.status}</td><td>${esc(r.remark||'')}</td>`; tbody.appendChild(tr); });
+  toast(`${arr.length} rows`);
+});
+$('#btnExportCSV').addEventListener('click', ()=>{
+  const rows=[['Req#','Date','Vehicle','Driver','Liters','Total','Status','Remark']];
+  Object.values(state.requests||{}).forEach(r=> rows.push([r.reqNo, new Date(r.createdAt).toLocaleDateString(), state.vehicles[r.vehicle]?.number||r.vehicle, r.driverDisplayName||r.driver, r.liters||0, r.total||0, r.status, (r.remark||'').replace(/\n/g,' ')]));
+  const csv = rows.map(r=> r.map(c=> `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='report.csv'; a.click(); URL.revokeObjectURL(url);
+});
+
+/* ---------- render helpers ---------- */
+function fillVehicleSelects(){ const sel=$('#addVehicle'); if(sel) sel.innerHTML = Object.entries(state.vehicles||{}).map(([id,v])=>`<option value="${id}">${esc(v.number||id)}</option>`).join(''); const ap = $('#apVehicle'); if(ap) ap.innerHTML = '<option>All</option>' + Object.entries(state.vehicles||{}).map(([id,v])=>`<option value="${id}">${esc(v.number||id)}</option>`).join(''); const ev = $('#editVehicle'); if(ev) ev.innerHTML = Object.entries(state.vehicles||{}).map(([id,v])=>`<option value="${id}">${esc(v.number||id)}</option>`).join(''); }
+function fillVendorSelects(){ const sel=$('#addVendor'); if(sel) sel.innerHTML = Object.entries(state.vendors||{}).map(([id,v])=>`<option value="${id}">${esc(v.name||id)}</option>`).join(''); const ap = $('#apVendor'); if(ap) ap.innerHTML = '<option>All</option>' + Object.entries(state.vendors||{}).map(([id,v])=>`<option value="${id}">${esc(v.name||id)}</option>`).join(''); const ev = $('#editVendor'); if(ev) ev.innerHTML = Object.entries(state.vendors||{}).map(([id,v])=>`<option value="${id}">${esc(v.name||id)}</option>`).join(''); }
+function renderVehicles(){ const t=$('#vehBody'); if(!t) return; t.innerHTML=''; Object.entries(state.vehicles||{}).forEach(([id,v])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${id}</td><td>${esc(v.number||'')}</td><td>${esc(v.model||'')}</td><td>${v.active!==false?'Yes':'No'}</td><td><button class="btn" data-editveh="${id}">Edit</button> <button class="btn" data-delveh="${id}">Delete</button></td>`; t.appendChild(tr); }); }
+function renderVendors(){ const t=$('#venBody'); if(!t) return; t.innerHTML=''; Object.entries(state.vendors||{}).forEach(([id,v])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${id}</td><td>${esc(v.name||'')}</td><td>${esc(v.city||'')}</td><td>${v.active!==false?'Yes':'No'}</td><td><button class="btn" data-editven="${id}">Edit</button> <button class="btn" data-delven="${id}">Delete</button></td>`; t.appendChild(tr); }); }
+function renderUsers(){ const t=$('#usrBody'); if(!t) return; t.innerHTML=''; Object.entries(state.users||{}).forEach(([k,v])=>{ const ws = Object.keys(v.widgets||{}).filter(x=>v.widgets[x]).join(','); const tr=document.createElement('tr'); tr.innerHTML = `<td>${k}</td><td>${esc(v.role||'')}</td><td>${esc(ws)}</td><td><button class="btn" data-edituser="${k}">Edit</button> <button class="btn" data-deluser="${k}">Delete</button></td>`; t.appendChild(tr); }); }
+function renderDashboard(){ const list = Object.values(state.requests||{}); $('#w_total').textContent = list.length; $('#w_liters').textContent = list.reduce((a,r)=>a + Number(r.liters||0),0).toFixed(2); $('#w_approved').textContent = list.filter(r=>r.status==='APPROVED').length; $('#w_pending').textContent = list.filter(r=>r.status==='PENDING' || r.status==='SAVED').length; $('#statTotal').textContent = list.length; $('#statPending').textContent = 'Pending: ' + list.filter(r=>r.status==='PENDING' || r.status==='SAVED').length; $('#statApproved').textContent = 'Approved: ' + list.filter(r=>r.status==='APPROVED').length; }
+function renderActivity(){ const rows = Object.values(state.activity||{}).sort((a,b)=>b.ts-a.ts).slice(0,50); const tb=$('#activityBody'); if(!tb) return; tb.innerHTML=''; rows.forEach((r,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${new Date(r.ts).toLocaleString()}</td><td>${esc(r.user)}</td><td>${esc(r.action)} ${esc(r.details||'')}</td>`; tb.appendChild(tr); }); $('#actCount').textContent = rows.length; }
+function renderCompany(){ $('#companyTitle').textContent = state.company.name || 'Busmate'; if(state.company.logo){ $('#companyLogo').src = state.company.logo; $('#companyLogo').style.display = ''; } else $('#companyLogo').style.display = 'none'; document.title = (state.company.name || 'Busmate') + ' — Fuel Management'; }
+
+/* ---------- periodic refresh to avoid small race conditions ---------- */
+setInterval(()=>{ try{ fillVehicleSelects(); fillVendorSelects(); renderDashboard(); renderActivity(); renderApprovals(); renderMyRequests(); }catch(e){} }, 2500);
+
+/* ---------- helpers used earlier but defined late to avoid hoisting issues ---------- */
+function renderApprovals(){} // the actual function body is already set earlier via event listeners; kept to avoid errors
+function renderMyRequests(){} // same as above
+
+/* ---------- small initial UI setup ---------- */
+applyWidgets(); showView('home'); // default landing is home
+
+</script>
+
+</body>
+</html>
