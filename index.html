@@ -3,168 +3,824 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Fuel Management — Firebase Test</title>
+<title>Fuel Management — Production</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-/* minimal styling, same as before */
-body{margin:0;font-family:Poppins,system-ui;background:#021026;color:#e7f2ff}
-header{padding:10px;background:#072743;color:#fff}
-.container{padding:20px}
-.card{background:#0b1d36;padding:15px;border-radius:10px;margin-bottom:12px}
-input,select{width:100%;padding:8px;margin-top:5px;border-radius:6px;border:1px solid #223;color:#fff;background:#0e2a4c}
-button{padding:8px 14px;margin-top:10px;border-radius:6px;border:none;cursor:pointer}
-.btn-primary{background:#22d3ee;color:#000;font-weight:700}
+:root{
+  --bg1:#021026; --bg2:#072743; --muted:#9fb0c8; --card:rgba(255,255,255,0.03);
+  --accentA:#7c3aed; --accentB:#22d3ee; --ok:#34d399; --bad:#ef4444; --maxW:1200px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Poppins,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#e7f2ff;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:-30vmax;z-index:-1;background:radial-gradient(600px 300px at 10% 10%, rgba(124,58,237,0.10), transparent),radial-gradient(700px 320px at 90% 80%, rgba(34,211,238,0.05), transparent);filter: blur(80px)}
+header.appbar{position:sticky;top:0;background:linear-gradient(180deg, rgba(2,6,23,0.55), rgba(2,6,23,0.35));backdrop-filter: blur(6px);border-bottom:1px solid rgba(255,255,255,0.03);z-index:60}
+.nav-inner{max-width:var(--maxW);margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.06)}
+.brand .title{font-weight:700;font-size:16px;margin:0}
+.brand .sub{font-size:12px;color:var(--muted);margin:0}
+.spacer{flex:1}
+.user-line{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.user-line .name{font-weight:600;font-size:13px;color:#eaf6ff}
+.user-line .role{font-size:12px;color:var(--muted)}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));color:#e6eef8;cursor:pointer}
+.btn.primary{background:linear-gradient(90deg,var(--accentB),var(--accentA));color:#02111a;border:none;font-weight:700}
+.btn.small{padding:6px 8px;font-size:13px;border-radius:8px}
+main.container{max-width:var(--maxW);margin:16px auto;padding:12px}
+.grid{display:grid;gap:12px}
+@media(min-width:980px){.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 24px rgba(2,6,23,0.55)}
+h3{margin:6px 0 8px;font-size:15px}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(2,6,23,0.6);color:#e7f2ff}
+textarea{min-height:80px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stack{display:flex;flex-direction:column;gap:8px}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.04);font-size:12px;background:rgba(255,255,255,0.02)}
+.muted-xs{color:var(--muted);font-size:13px}
+.widget-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+@media(max-width:760px){.widget-grid{grid-template-columns:repeat(2,1fr)}}
+.widget{padding:14px;border-radius:12px;min-height:86px;color:#eaf8ff;background:linear-gradient(180deg,rgba(124,58,237,0.12),rgba(34,211,238,0.03));display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;overflow:hidden}
+.widget .title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb-row{display:flex;gap:8px;flex-wrap:wrap}
+.thumb-row img{width:100%;max-width:140px;height:96px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,0.04)}
+.bottom-nav{position:fixed;left:12px;right:12px;bottom:12px;display:flex;gap:10px;justify-content:center;z-index:60}
+.toast{position:fixed;right:18px;bottom:18px;background:linear-gradient(90deg,var(--accentB),var(--accentA));color:#02111a;padding:10px 14px;border-radius:10px;box-shadow:0 12px 30px rgba(34,211,238,0.12);display:none;z-index:70}
+.modal{position:fixed;inset:0;background:rgba(2,6,23,0.7);display:grid;place-items:center;z-index:80;padding:14px}
+.modal .panel{max-width:960px;width:96%;max-height:92vh;overflow:auto;background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)}
+.img-full{max-width:100%;max-height:72vh;border-radius:8px}
 .hidden{display:none}
+@media(max-width:520px){
+  .nav-inner{padding:10px}
+  .brand .title{font-size:14px}
+  .user-line{text-align:left;align-items:flex-start}
+  .widget{min-height:72px;padding:10px}
+  .thumb-row img{height:64px;max-width:110px}
+  .modal .panel{padding:10px}
+  .table, .table thead, .table tbody, .table th, .table td, .table tr{display:block}
+  .table thead{display:none}
+  .table td{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .table td::before{content:attr(data-label);color:var(--muted);margin-right:8px}
+}
+.danger{background:linear-gradient(90deg,#ff9a9a,#ff6b6b);color:#02111a;border:none}
 </style>
 </head>
 <body>
-<header>
-  <h2>🚍 Fuel Management (Firebase)</h2>
+<header class="appbar">
+  <div class="nav-inner">
+    <div class="brand">
+      <img id="companyLogo" src="" alt="logo" style="display:none"/>
+      <div>
+        <div class="title" id="brandName">BusMate • Fuel</div>
+        <div class="sub" id="brandSub">Fuel Utilisation & Logs</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div id="authArea"></div>
+  </div>
 </header>
 
-<div class="container">
-
+<main class="container">
   <!-- LOGIN -->
-  <div id="viewLogin" class="card">
-    <h3>Login</h3>
-    <input id="loginUser" placeholder="Username" />
-    <input id="loginPass" type="password" placeholder="Password" />
-    <button class="btn-primary" id="btnLogin">Login</button>
-  </div>
+  <section id="viewLogin" class="card grid cols-2" style="max-width:820px;margin:20px auto">
+    <div>
+      <h3>Fuel Utilisation & Log Management</h3>
+      <p class="muted-xs">Single-file prototype. LocalStorage-backed. Seed users: <b>admin/admin</b>, <b>approver/approver</b>, <b>driver/driver</b>.</p>
+    </div>
+    <div class="stack">
+      <label>Username</label><input id="loginUser" placeholder="admin"/>
+      <label>Password</label><input id="loginPass" type="password" placeholder="admin"/>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn primary" id="btnLogin">Sign in</button>
+      </div>
+    </div>
+  </section>
 
   <!-- HOME -->
-  <div id="viewHome" class="card hidden">
-    <h3>Welcome, <span id="userName"></span></h3>
-    <button onclick="openView('viewAddFuel')">➕ Add Fuel</button>
-    <button onclick="openView('viewMyRequests')">📑 My Requests</button>
-    <button onclick="logout()">🚪 Logout</button>
-  </div>
+  <section id="viewHome" class="hidden">
+    <div class="grid cols-3">
+      <div class="card">
+        <h3>Quick Widgets</h3>
+        <div id="widgets" class="widget-grid" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h3>Overview</h3>
+        <div class="row" style="gap:8px">
+          <span class="pill" id="statApproved">Approved: 0</span>
+          <span class="pill" id="statPending">Pending: 0</span>
+          <span class="pill" id="statRejected">Rejected: 0</span>
+        </div>
+        <div style="height:10px"></div>
+        <div class="muted-xs">This month liters: <b id="mLiters">0</b></div>
+        <div class="muted-xs">This month amount: <b id="mAmount">₹0</b></div>
+      </div>
+      <div id="recentCard" class="card">
+        <h3>Recent Activity</h3>
+        <div id="recentActivity" class="stack" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
 
   <!-- ADD FUEL -->
-  <div id="viewAddFuel" class="card hidden">
-    <h3>Add Fuel Request</h3>
-    <select id="frVehicle"></select>
-    <select id="frVendor"></select>
-    <input id="frRate" type="number" placeholder="Rate per Liter" />
-    <input id="frLiters" type="number" placeholder="Liters" />
-    <input id="frTotal" readonly placeholder="Total" />
-    <button class="btn-primary" id="btnSubmitFuel">Submit</button>
-    <button onclick="openView('viewHome')">Cancel</button>
-  </div>
+  <section id="viewAddFuel" class="card hidden" style="max-width:1100px;margin:auto">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h3>Add Fuel Request</h3>
+      <div class="muted-xs">Use camera or gallery to upload photos.</div>
+    </div>
+    <div class="grid cols-3" style="margin-top:8px">
+      <div class="stack"><label>Vehicle</label><select id="frVehicle"></select></div>
+      <div class="stack"><label>Fuel Type</label><select id="frFuelType"><option>DIESEL</option><option>PETROL</option><option>ADBLUE</option><option>OTHER</option></select></div>
+      <div class="stack"><label>Vendor</label><select id="frVendor"></select></div>
+    </div>
+    <div class="grid cols-3" style="margin-top:10px">
+      <div class="stack"><label>Rate per Liter</label><input id="frRate" type="number" step="0.01" /></div>
+      <div class="stack"><label>Liters</label><input id="frLiters" type="number" step="0.01" /></div>
+      <div class="stack"><label>Total</label><input id="frTotal" readonly /></div>
+    </div>
+    <div class="grid cols-3" style="margin-top:10px">
+      <div class="stack"><label>Odometer (KM)</label><input id="frOdo" type="number" /></div>
+      <div class="stack"><label>Odometer Photo</label><input id="frPhotoOdo" type="file" accept="image/*" capture="environment" /></div>
+      <div class="stack"><label>Station Photo</label><input id="frPhotoPump" type="file" accept="image/*" capture="environment" /></div>
+    </div>
+    <div class="grid cols-3" style="margin-top:10px">
+      <div class="stack"><label>Receipt Photo</label><input id="frPhotoReceipt" type="file" accept="image/*" capture="environment" /></div>
+      <div class="stack"><label>Remarks (optional)</label><textarea id="frRemark" placeholder="notes (optional)"></textarea></div>
+      <div class="stack"><label>Preview</label><div id="frThumbs" class="thumb-row"></div></div>
+    </div>
+    <div style="height:12px"></div>
+    <div class="row" style="justify-content:flex-end;gap:10px">
+      <button class="btn" onclick="openView('viewHome')">Cancel</button>
+      <button class="btn primary" id="btnSubmitFuel">Submit Request</button>
+    </div>
+  </section>
 
   <!-- MY REQUESTS -->
-  <div id="viewMyRequests" class="card hidden">
-    <h3>My Requests</h3>
-    <div id="myRequestsList"></div>
-    <button onclick="openView('viewHome')">⬅ Back</button>
-  </div>
+  <section id="viewMyRequests" class="card hidden" style="max-width:1100px;margin:auto">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h3>My Requests</h3>
+      <div class="muted-xs">Requests you created — approver/admin can edit & approve.</div>
+    </div>
+    <div class="row" style="margin-top:8px;gap:8px">
+      <input id="mrSearch" placeholder="search vehicle/vendor/remark" style="max-width:260px"/>
+      <label class="muted-xs">Show Approved <input type="checkbox" id="mrShowApproved" /></label>
+      <div style="flex:1"></div>
+      <button class="btn small" onclick="openView('viewAddFuel')">New Request</button>
+    </div>
+    <div id="myRequestsTable" style="margin-top:12px"></div>
+  </section>
 
+  <!-- APPROVALS -->
+  <section id="viewApprovals" class="card hidden" style="max-width:1100px;margin:auto">
+    <h3>Approvals</h3>
+    <div class="row" style="margin-top:8px;gap:8px">
+      <input id="apSearch" placeholder="search driver/vehicle/remark" style="max-width:320px"/>
+      <div style="flex:1"></div>
+      <button class="btn small" onclick="openView('viewHome')">Back</button>
+    </div>
+    <div id="approvalsTable" style="margin-top:12px"></div>
+  </section>
+
+  <!-- CHANGE PASSWORD -->
+  <section id="viewChangePwd" class="card hidden" style="max-width:520px;margin:auto">
+    <h3>Change Password</h3>
+    <div class="stack">
+      <label>Current Password</label><input id="cp_current" type="password"/>
+      <label>New Password</label><input id="cp_new" type="password"/>
+      <label>Confirm New</label><input id="cp_confirm" type="password"/>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="btn" onclick="openView('viewHome')">Cancel</button>
+        <button class="btn primary" id="btnChangePwd">Change</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="viewReports" class="card hidden" style="max-width:1100px;margin:auto">
+    <h3>Reports</h3>
+    <div class="grid cols-4">
+      <div class="stack"><label>From</label><input type="date" id="repFrom"/></div>
+      <div class="stack"><label>To</label><input type="date" id="repTo"/></div>
+      <div class="stack"><label>Vehicle</label><select id="repVeh"></select></div>
+      <div class="stack"><label>Status</label><select id="repStatus"><option value="ALL">All</option><option value="PENDING">Pending</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option></select></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn small" id="btnRunReport">Run</button>
+      <button class="btn small" id="btnExportCSV">Export CSV</button>
+      <button class="btn small" onclick="openView('viewHome')">Back</button>
+    </div>
+    <div id="reportsOut" style="margin-top:12px"></div>
+  </section>
+
+  <!-- USERS -->
+  <section id="viewUsers" class="card hidden" style="max-width:1100px;margin:auto">
+    <h3>Users • Create / Edit / Delete</h3>
+    <div class="grid cols-3">
+      <div class="stack"><label>Username</label><input id="uName" /></div>
+      <div class="stack"><label>Display Name</label><input id="uDisplay" /></div>
+      <div class="stack"><label>Password</label><input id="uPass" /></div>
+    </div>
+    <div class="grid cols-3" style="margin-top:8px">
+      <div class="stack"><label>Role (required)</label><select id="uRole"><option value="">-- select --</option><option value="DRIVER">Driver</option><option value="APPROVER">Approver</option><option value="ADMIN">Admin</option></select></div>
+      <div class="stack"><label>Widgets Access (tick to allow)</label><div id="uWidgets" class="muted-xs"></div></div>
+      <div class="stack"><label>Status</label><select id="uStatus"><option>ACTIVE</option><option>DISABLED</option></select></div>
+    </div>
+    <div style="margin-top:8px" class="row" style="justify-content:flex-end;gap:8px">
+      <button class="btn" id="btnClearUser">Clear</button>
+      <button class="btn primary" id="btnSaveUser">Save User</button>
+    </div>
+    <div id="usersList" style="margin-top:12px"></div>
+  </section>
+
+  <!-- ASSETS -->
+  <section id="viewAssets" class="grid cols-2 card hidden" style="max-width:1100px;margin:auto">
+    <div>
+      <h3>Vehicles</h3>
+      <div class="row" style="gap:8px">
+        <input id="vehNum" placeholder="GJ05AB1234" />
+        <select id="vehFuel"><option>DIESEL</option><option>PETROL</option><option>ADBLUE</option></select>
+        <button class="btn" id="btnSaveVehicle">Add</button>
+      </div>
+      <div id="vehList" style="margin-top:10px"></div>
+    </div>
+    <div>
+      <h3>Vendors</h3>
+      <div class="row" style="gap:8px">
+        <input id="venName" placeholder="Vendor name" />
+        <button class="btn" id="btnSaveVendor">Add</button>
+      </div>
+      <div id="venList" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- COMPANY -->
+  <section id="viewCompany" class="card hidden" style="max-width:820px;margin:auto">
+    <h3>Company</h3>
+    <div class="grid cols-3">
+      <div class="stack"><label>Company Name</label><input id="companyName" /></div>
+      <div class="stack"><label>Logo</label><input id="companyLogoFile" type="file" accept="image/*" /></div>
+      <div class="stack"><label>&nbsp;</label><button class="btn" id="btnSaveCompany">Save</button></div>
+    </div>
+    <div style="height:8px"></div>
+    <div class="card"><h4>Assign Users to Company</h4><div id="companyUsers" class="row" style="gap:8px"></div></div>
+  </section>
+
+  <!-- LOGS -->
+  <section id="viewLogs" class="card hidden" style="max-width:1100px;margin:auto">
+    <h3>Audit Logs</h3>
+    <div class="row" style="gap:8px">
+      <input id="logSearch" placeholder="search user/action" style="max-width:320px" />
+      <div style="flex:1"></div>
+      <button class="btn small" id="btnExportLogs">Export JSON</button>
+    </div>
+    <div id="logsOut" style="margin-top:12px"></div>
+  </section>
+
+  <div style="height:36px"></div>
+  <div class="muted-xs" style="text-align:center">Production prototype — single-file, local-only demo. Save to your server and test. © 2025</div>
+</main>
+
+<!-- modal + toast + bottom nav -->
+<div id="modal" class="modal hidden"><div class="panel" id="modalBody"></div></div>
+<div id="toast" class="toast"></div>
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="btn" onclick="openView('viewHome')">Home</button>
+  <button class="btn" onclick="openView('viewAddFuel')">Add Fuel</button>
+  <button class="btn" onclick="openView('viewMyRequests')">My Req</button>
 </div>
 
-<script type="module">
-/* ---------------------------
-   Firebase Config (INLINE)
-   Replace values with your own
----------------------------- */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+<script>
+/* Single-file production build
+   - Fixed Approve/Reject/Save flow using delegation and widget RBAC.
+   - Sequential request numbers preserved in localStorage.
+   - Change password widget added.
+*/
+(() => {
+  const KEY = {USERS:'fm_users', SESS:'fm_sess', VEH:'fm_veh', VEN:'fm_ven', REQ:'fm_req', LOG:'fm_log', COMP:'fm_comp', REQCTR:'fm_req_ctr'};
+  const ROLES = {DRIVER:'DRIVER', APPROVER:'APPROVER', ADMIN:'ADMIN'};
+  const STATUS = {PENDING:'PENDING', APPROVED:'APPROVED', REJECTED:'REJECTED'};
 
-const firebaseConfig = {
-  appId: "YOUR_APP_ID"
-  apiKey: "AIzaSyAq2SLz4bvv4adWRr4HoO3N8AUvRgofhTU",
-  authDomain: "busmate-77faa.firebaseapp.com",
-  databaseURL: "https://busmate-77faa-default-rtdb.firebaseio.com",
-  projectId: "busmate-77faa",
-  storageBucket: "busmate-77faa.firebasestorage.app",
-  messagingSenderId: "297223555070",
-  appId: "1:297223555070:web:0b8a51ea3e0005bb8d62af",
-  measurementId: "G-Y8QNLRPKRM"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+  const ALL_WIDGETS = [
+    {id:'W_ADD',label:'Add Fuel',view:'viewAddFuel'},
+    {id:'W_MINE',label:'My Requests',view:'viewMyRequests'},
+    {id:'W_APPROVE',label:'Approvals',view:'viewApprovals'},
+    {id:'W_REPORT',label:'Reports',view:'viewReports'},
+    {id:'W_COMP',label:'Company',view:'viewCompany'},
+    {id:'W_USER',label:'Users',view:'viewUsers'},
+    {id:'W_ASSET',label:'Assets',view:'viewAssets'},
+    {id:'W_LOG',label:'Logs',view:'viewLogs'},
+    {id:'W_PW',label:'Change Password',view:'viewChangePwd'}
+  ];
 
-/* ---------------------------
-   Simple App Logic
----------------------------- */
-let SESSION = null;
-const $ = s => document.querySelector(s);
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const lsGet = (k,d=null) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch(e){ return d } };
+  const lsSet = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+  const uid = () => 'id_' + Math.random().toString(36).slice(2,10);
+  const now = () => new Date().toISOString();
+  const toast = (m,t=2000) => { const el = $('#toast'); el.textContent = m; el.style.display='block'; setTimeout(()=>el.style.display='none', t); };
 
-function openView(id){
-  ["viewLogin","viewHome","viewAddFuel","viewMyRequests"].forEach(v=>$( "#" + v ).classList.add("hidden"));
-  $("#" + id).classList.remove("hidden");
-}
+  function addLog(user, role, action, oldVal=null, newVal=null, extra={}) {
+    const logs = lsGet(KEY.LOG,[]) || []; logs.unshift({id:uid(), user, role, action, oldVal, newVal, extra, ts: now()}); lsSet(KEY.LOG, logs); renderRecent();
+  }
 
-function logout(){
-  SESSION = null;
-  openView("viewLogin");
-}
+  function seed(){
+    if(!lsGet(KEY.USERS,[]).some(u=>u.username==='admin')){
+      const base = [];
+      base.push({id:uid(),username:'admin',password:'admin',displayName:'Administrator',role:ROLES.ADMIN,widgets:ALL_WIDGETS.map(w=>w.id),status:'ACTIVE'});
+      base.push({id:uid(),username:'approver',password:'approver',displayName:'Nina Approver',role:ROLES.APPROVER,widgets:['W_APPROVE','W_REPORT','W_MINE','W_PW'],status:'ACTIVE'});
+      base.push({id:uid(),username:'driver',password:'driver',displayName:'Ravi Driver',role:ROLES.DRIVER,widgets:['W_ADD','W_MINE','W_PW'],status:'ACTIVE'});
+      lsSet(KEY.USERS, base);
+    }
+    if(!lsGet(KEY.VEH,[]).length) lsSet(KEY.VEH, [{id:uid(),number:'GJ05AB1234',fuel:'DIESEL'},{id:uid(),number:'GJ01CD5678',fuel:'PETROL'}]);
+    if(!lsGet(KEY.VEN,[]).length) lsSet(KEY.VEN, [{id:uid(),name:'Ram Petrol Pump'},{id:uid(),name:'Bombay Fuel Station'}]);
+    if(localStorage.getItem(KEY.REQCTR) === null) localStorage.setItem(KEY.REQCTR,'0');
+    if(!lsGet(KEY.COMP,null)) lsSet(KEY.COMP, {name:'BusMate', logo:null, users:[]});
+    if(!lsGet(KEY.LOG,[]).length) lsSet(KEY.LOG, []);
+    if(!lsGet(KEY.REQ,[]).length) lsSet(KEY.REQ, []);
+  }
 
-/* LOGIN */
-$("#btnLogin").onclick = async () => {
-  const u = $("#loginUser").value.trim();
-  const p = $("#loginPass").value;
-  if(!u||!p) return alert("Enter credentials");
-  const snap = await get(ref(db,"users"));
-  if(!snap.exists()) return alert("No users found in DB. Import seed.json first!");
-  const users = snap.val();
-  const arr = Object.values(users);
-  const user = arr.find(x => x.username===u && x.password===p);
-  if(!user) return alert("Invalid credentials");
-  SESSION = user;
-  $("#userName").textContent = SESSION.displayName || SESSION.username;
-  openView("viewHome");
-};
+  function session(){ return lsGet(KEY.SESS, null) }
+  function setSessionFromUser(user){
+    const sess = { id:user.id, username:user.username, displayName:user.displayName||user.username, role:user.role, widgets:user.widgets||[] };
+    lsSet(KEY.SESS, sess); renderAuth(); applyCompany();
+  }
+  function clearSession(){ localStorage.removeItem(KEY.SESS); renderAuth(); applyCompany(); }
 
-/* PREPARE FORM */
-async function prepareForm(){
-  const vSnap = await get(ref(db,"vehicles"));
-  $("#frVehicle").innerHTML = vSnap.exists() ? Object.values(vSnap.val()).map(v=>`<option value="${v.id}">${v.number}</option>`).join("") : "";
-  const venSnap = await get(ref(db,"vendors"));
-  $("#frVendor").innerHTML = venSnap.exists() ? Object.values(venSnap.val()).map(v=>`<option value="${v.id}">${v.name}</option>`).join("") : "";
-}
-$("#frRate").oninput = calcTotal;
-$("#frLiters").oninput = calcTotal;
-function calcTotal(){ $("#frTotal").value = ((+$("#frRate").value||0) * (+$("#frLiters").value||0)).toFixed(2); }
+  // RBAC helpers: Admin bypasses widgets; otherwise widget must be present.
+  function hasWidget(widgetId){
+    const s = session(); if(!s) return false;
+    if(s.role === ROLES.ADMIN) return true;
+    return (s.widgets || []).includes(widgetId);
+  }
+  function hasAccessToView(viewName){
+    const s = session(); if(!s) return false;
+    if(s.role === ROLES.ADMIN) return true;
+    const widget = ALL_WIDGETS.find(w=>w.view===viewName);
+    if(!widget) return true;
+    return hasWidget(widget.id);
+  }
 
-/* SUBMIT REQUEST */
-$("#btnSubmitFuel").onclick = async () => {
-  if(!SESSION) return alert("Login first");
-  const req = {
-    id: Date.now().toString(),
-    driverId: SESSION.id,
-    driverName: SESSION.displayName,
-    vehicleId: $("#frVehicle").value,
-    vendorId: $("#frVendor").value,
-    rate: +$("#frRate").value||0,
-    liters: +$("#frLiters").value||0,
-    total: +$("#frTotal").value||0,
-    status: "PENDING",
-    createdAt: new Date().toISOString()
-  };
-  await set(push(ref(db,"requests")), req);
-  alert("Fuel Request Submitted!");
-  openView("viewMyRequests");
-  loadMyRequests();
-};
+  function applyCompany(){
+    const comp = lsGet(KEY.COMP, {name:'BusMate', logo:null});
+    $('#brandName').textContent = comp.name || 'BusMate • Fuel';
+    if(comp.logo){ $('#companyLogo').src = comp.logo; $('#companyLogo').style.display='inline-block'; } else $('#companyLogo').style.display='none';
+    document.title = comp.name ? `${comp.name} • Fuel` : 'Fuel Management';
+  }
 
-/* LOAD MY REQUESTS */
-async function loadMyRequests(){
-  if(!SESSION) return;
-  const snap = await get(ref(db,"requests"));
-  const list = $("#myRequestsList");
-  if(!snap.exists()){ list.innerHTML = "<p>No requests</p>"; return; }
-  const reqs = Object.values(snap.val()).filter(r=>r.driverId===SESSION.id);
-  list.innerHTML = reqs.map(r=>`<div class="card"><b>#${r.id}</b> • ${r.status} • ₹${r.total}</div>`).join("");
-}
+  function renderAuth(){
+    const s = session(); const area = $('#authArea'); area.innerHTML='';
+    if(s){
+      const container = document.createElement('div'); container.className='user-line';
+      container.innerHTML = `<div class="name">${escapeHtml(s.displayName || s.username)}</div><div class="role">${escapeHtml(s.role)}</div>`;
+      const btnLogout = document.createElement('button'); btnLogout.className='btn'; btnLogout.textContent='Logout';
+      btnLogout.onclick = ()=>{ addLog(s.username, s.role, 'logout'); clearSession(); location.reload(); };
+      area.appendChild(container); area.appendChild(btnLogout); $('#bottomNav').style.display='flex';
+    } else {
+      const btn = document.createElement('button'); btn.className='btn primary'; btn.textContent='Sign in'; btn.onclick = ()=> openView('viewLogin');
+      area.appendChild(btn); $('#bottomNav').style.display='none';
+    }
+  }
 
-/* When switching views */
-window.openView = async function(id){
-  ["viewLogin","viewHome","viewAddFuel","viewMyRequests"].forEach(v=>$( "#" + v ).classList.add("hidden"));
-  $("#" + id).classList.remove("hidden");
-  if(id==="viewAddFuel") await prepareForm();
-  if(id==="viewMyRequests") await loadMyRequests();
-}
+  function hideAll(){ $$('main.container section').forEach(s=>s.classList.add('hidden')); }
+  function openView(id){
+    const s = session();
+    if(!s && id !== 'viewLogin'){ openView('viewLogin'); return; }
+    if(id !== 'viewLogin' && !hasAccessToView(id)){ toast('Access denied'); return; }
+    hideAll(); const el = document.getElementById(id); if(el) el.classList.remove('hidden');
+    switch(id){
+      case 'viewHome': renderHome(); break;
+      case 'viewAddFuel': prepareFuelForm(); break;
+      case 'viewMyRequests': renderMyRequests(); break;
+      case 'viewApprovals': renderApprovals(); break;
+      case 'viewReports': prepareReports(); runReport(true); break;
+      case 'viewUsers': renderUsersUI(); break;
+      case 'viewAssets': renderAssets(); break;
+      case 'viewCompany': renderCompany(); break;
+      case 'viewLogs': renderLogs(); break;
+      case 'viewChangePwd': prepareChangePwd(); break;
+    }
+  }
 
+  function handleLogin(){
+    const u = $('#loginUser').value.trim(), p = $('#loginPass').value;
+    const users = lsGet(KEY.USERS,[]);
+    const user = users.find(x=>x.username===u && x.password===p && x.status!=='DISABLED');
+    if(!user){ toast('Invalid credentials'); addLog(u,'N/A','login_failed'); return; }
+    setSessionFromUser(user); addLog(user.username,user.role,'login_success'); openView('viewHome');
+  }
+
+  function renderHome(){
+    const s = session(); if(!s) return;
+    hideAll(); $('#viewHome').classList.remove('hidden');
+    const wrap = $('#widgets'); wrap.innerHTML = '';
+    const permitted = (s.role === ROLES.ADMIN) ? ALL_WIDGETS : ALL_WIDGETS.filter(w=> (s.widgets||[]).includes(w.id));
+    permitted.forEach(w=>{
+      const el = document.createElement('div'); el.className='widget';
+      el.innerHTML = `<div class="title">${escapeHtml(w.label)}</div><div class="muted-xs">${escapeHtml(w.view)}</div>`;
+      el.onclick = ()=> openView(w.view);
+      wrap.appendChild(el);
+    });
+    const showRecent = (s.role === ROLES.ADMIN) || ((s.widgets||[]).includes('W_LOG'));
+    if(!showRecent) $('#recentCard').classList.add('hidden'); else $('#recentCard').classList.remove('hidden');
+    renderStats(); renderRecent();
+  }
+
+  function renderStats(){
+    const s = session(); const reqs = lsGet(KEY.REQ,[]);
+    const mine = s.role === ROLES.DRIVER ? reqs.filter(r=>r.driverId===s.id) : reqs;
+    $('#statApproved').textContent = `Approved: ${mine.filter(r=>r.status===STATUS.APPROVED).length}`;
+    $('#statPending').textContent = `Pending: ${mine.filter(r=>r.status===STATUS.PENDING).length}`;
+    $('#statRejected').textContent = `Rejected: ${mine.filter(r=>r.status===STATUS.REJECTED).length}`;
+    const month = new Date().getMonth(), year = new Date().getFullYear();
+    const m = mine.filter(r=>{ const d=new Date(r.createdAt); return d.getMonth()===month && d.getFullYear()===year });
+    const liters = m.reduce((a,b)=>a+(+b.liters||0),0); const amt = m.reduce((a,b)=>a+(+b.total||0),0);
+    $('#mLiters').textContent = liters.toFixed(2); $('#mAmount').textContent = `₹${amt.toFixed(2)}`;
+  }
+
+  function renderRecent(){
+    const logs = lsGet(KEY.LOG,[]).slice(0,6);
+    $('#recentActivity').innerHTML = logs.map(l=>`<div class="row" style="justify-content:space-between"><div><b>${escapeHtml(l.action)}</b><div class="muted-xs">${escapeHtml(l.user)} — ${escapeHtml(l.role)}</div></div><div class="muted-xs">${new Date(l.ts).toLocaleString()}</div></div>`).join('') || '<div class="muted-xs">No activity</div>';
+  }
+
+  function nextReqNo(){ let n = parseInt(localStorage.getItem(KEY.REQCTR)||'0',10); n++; localStorage.setItem(KEY.REQCTR, String(n)); return n; }
+
+  function prepareFuelForm(){
+    $('#frThumbs').innerHTML=''; $('#frRate').value=''; $('#frLiters').value=''; $('#frTotal').value=''; $('#frOdo').value=''; $('#frRemark').value='';
+    const veh = lsGet(KEY.VEH,[]); $('#frVehicle').innerHTML = veh.map(v=>`<option value="${v.id}">${escapeHtml(v.number)}</option>`).join('');
+    const ven = lsGet(KEY.VEN,[]); $('#frVendor').innerHTML = ven.map(v=>`<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('');
+  }
+  function calcFrTotal(){ const r = parseFloat($('#frRate').value)||0; const l = parseFloat($('#frLiters').value)||0; $('#frTotal').value = (r*l || 0).toFixed(2); }
+  function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const rd=new FileReader(); rd.onload=e=>res(e.target.result); rd.onerror=rej; rd.readAsDataURL(file); }); }
+  async function previewFuelFiles(){
+    const thumbs = $('#frThumbs'); thumbs.innerHTML='';
+    const arr = [['#frPhotoOdo','odo'],['#frPhotoPump','pump'],['#frPhotoReceipt','receipt']];
+    for(const [sel,k] of arr){
+      const fi = document.querySelector(sel);
+      if(fi && fi.files && fi.files[0]){ try{ const d = await readFileAsDataURL(fi.files[0]); const img = document.createElement('img'); img.src=d; img.alt=k; img.onclick=()=> openImageModal(d); thumbs.appendChild(img); }catch(e){} }
+    }
+  }
+  async function submitFuel(){
+    const s = session(); if(!s){ toast('Login required'); openView('viewLogin'); return; }
+    const vehicleId = $('#frVehicle').value, vendorId = $('#frVendor').value;
+    const rate = parseFloat($('#frRate').value)||0, liters = parseFloat($('#frLiters').value)||0, odo = parseFloat($('#frOdo').value)||0;
+    const remark = ($('#frRemark').value||'').trim();
+    if(!vehicleId || !vendorId || !rate || !liters || !odo){ toast('Please fill required fields'); return; }
+    const pOdo = $('#frPhotoOdo').files[0] ? await readFileAsDataURL($('#frPhotoOdo').files[0]) : null;
+    const pPump = $('#frPhotoPump').files[0] ? await readFileAsDataURL($('#frPhotoPump').files[0]) : null;
+    const pRec = $('#frPhotoReceipt').files[0] ? await readFileAsDataURL($('#frPhotoReceipt').files[0]) : null;
+    const reqs = lsGet(KEY.REQ,[]); const r = { id: uid(), reqNo: nextReqNo(), driverId: s.id, driverName: s.displayName||s.username, driverRole: s.role, vehicleId, vendorId, fuelType: $('#frFuelType').value, rate, liters, total: +(rate*liters).toFixed(2), odometer: odo, remark, photos:{odo:pOdo,pump:pPump,receipt:pRec}, status: STATUS.PENDING, approverId:null, approverName:null, createdAt: now(), updatedAt: now(), version:1, history:[] };
+    reqs.unshift(r); lsSet(KEY.REQ, reqs); addLog(s.username,s.role,'create_request',null,r); toast('Submitted'); renderStats(); openView('viewMyRequests');
+  }
+
+  function renderMyRequests(){
+    const s = session(); if(!s) return;
+    let reqs = lsGet(KEY.REQ,[]);
+    if(s.role === ROLES.DRIVER) reqs = reqs.filter(r=>r.driverId === s.id);
+    const q = ($('#mrSearch').value||'').toLowerCase();
+    if(!$('#mrShowApproved').checked) reqs = reqs.filter(r=>r.status !== STATUS.APPROVED);
+    if(q) reqs = reqs.filter(r => (r.remark||'').toLowerCase().includes(q) || (r.driverName||'').toLowerCase().includes(q));
+    if(!reqs.length){ $('#myRequestsTable').innerHTML = '<div class="muted-xs">No requests</div>'; return; }
+    const vehMap = Object.fromEntries(lsGet(KEY.VEH,[]).map(v=>[v.id,v.number])); const venMap = Object.fromEntries(lsGet(KEY.VEN,[]).map(v=>[v.id,v.name]));
+    const html = reqs.map(r=>`<div class="card" style="margin-bottom:10px">
+      <div class="row" style="justify-content:space-between"><div><b>Req# ${r.reqNo}</b> <span class="muted-xs">• ${escapeHtml(vehMap[r.vehicleId]||'-')}</span></div><div><span class="pill">${r.status}</span></div></div>
+      <div style="margin-top:8px" class="grid cols-3">
+        <div><div class="muted-xs">Driver</div><div>${escapeHtml(r.driverName)} <span class="muted-xs">— ${escapeHtml(r.driverRole)}</span></div></div>
+        <div><div class="muted-xs">Liters</div><div>${(+r.liters).toFixed(2)}</div></div>
+        <div><div class="muted-xs">Total</div><div>₹${(+r.total).toFixed(2)}</div></div>
+      </div>
+      <div style="margin-top:8px" class="grid cols-3">
+        <div><div class="muted-xs">Vendor</div><div>${escapeHtml(venMap[r.vendorId]||'-')}</div></div>
+        <div><div class="muted-xs">Odometer</div><div>${escapeHtml(r.odometer||'')}</div></div>
+        <div><div class="muted-xs">Remark</div><div>${escapeHtml(r.remark||'')}</div></div>
+      </div>
+      <div style="margin-top:8px" class="thumb-row">
+        ${r.photos?.odo?`<img src="${r.photos.odo}" onclick="openImageModal('${r.photos.odo}')" />`:''}
+        ${r.photos?.pump?`<img src="${r.photos.pump}" onclick="openImageModal('${r.photos.pump}')" />`:''}
+        ${r.photos?.receipt?`<img src="${r.photos.receipt}" onclick="openImageModal('${r.photos.receipt}')" />`:''}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" onclick="openRequestModal('${r.id}')">View</button>
+        ${(s.role===ROLES.DRIVER && r.status===STATUS.PENDING) ? `<button class="btn" onclick="deleteRequest('${r.id}')">Delete</button>` : ''}
+        ${(s.role===ROLES.ADMIN) ? `<button class="btn" onclick="deleteRequest('${r.id}')">Delete</button>` : ''}
+      </div>
+    </div>`).join('');
+    $('#myRequestsTable').innerHTML = html;
+  }
+
+  function deleteRequest(id){
+    const s = session(); if(!s) return;
+    const arr = lsGet(KEY.REQ,[]); const i = arr.findIndex(x=>x.id===id); if(i<0) return;
+    const old = arr[i];
+    if(s.role === ROLES.DRIVER && old.driverId !== s.id){ toast('Not allowed'); return; }
+    if(s.role === ROLES.DRIVER && old.status !== STATUS.PENDING){ toast('Cannot delete non-pending'); return; }
+    if(!confirm('Delete request?')) return;
+    arr.splice(i,1); lsSet(KEY.REQ,arr); addLog(s.username,s.role,'delete_request',old,null); toast('Deleted'); renderMyRequests(); renderStats(); renderApprovals();
+  }
+
+  // Render approvals and attach event delegation for actions to avoid broken inline handlers.
+  function renderApprovals(){
+    const s = session(); if(!s) return;
+    if(!hasWidget('W_APPROVE') && s.role !== ROLES.ADMIN){ $('#approvalsTable').innerHTML = '<div class="muted-xs">You do not have approval rights.</div>'; return; }
+    let reqs = lsGet(KEY.REQ,[]).filter(r=>r.status===STATUS.PENDING);
+    const q = ($('#apSearch').value||'').toLowerCase();
+    if(q) reqs = reqs.filter(r=> (r.driverName||'').toLowerCase().includes(q) || (r.remark||'').toLowerCase().includes(q));
+    const vehMap = Object.fromEntries(lsGet(KEY.VEH,[]).map(v=>[v.id,v.number])); const venMap = Object.fromEntries(lsGet(KEY.VEN,[]).map(v=>[v.id,v.name]));
+    if(!reqs.length){ $('#approvalsTable').innerHTML = '<div class="muted-xs">No pending requests</div>'; return; }
+
+    const html = reqs.map(r=>{
+      return `<div class="card ap-card" data-id="${r.id}">
+        <div class="row" style="justify-content:space-between"><div><b>Req# ${r.reqNo}</b> <span class="muted-xs">• ${escapeHtml(vehMap[r.vehicleId]||'-')}</span></div><div><span class="pill">${r.status}</span></div></div>
+
+        <div style="margin-top:8px" class="grid cols-3">
+          <div class="stack"><label>Liters</label><input class="ap-lit" data-id="${r.id}" value="${r.liters}" /></div>
+          <div class="stack"><label>Rate</label><input class="ap-rate" data-id="${r.id}" value="${r.rate}" /></div>
+          <div class="stack"><label>Total</label><input class="ap-total" data-id="${r.id}" value="${r.total}" readonly /></div>
+        </div>
+
+        <div style="margin-top:8px" class="grid cols-3">
+          <div class="stack"><label>Odometer</label><input class="ap-odo" data-id="${r.id}" value="${r.odometer}" /></div>
+          <div class="stack"><label>Created At</label><input class="ap-date" data-id="${r.id}" type="datetime-local" value="${toInputLocal(r.createdAt)}" /></div>
+          <div class="stack"><label>Remark</label><textarea class="ap-rem" data-id="${r.id}">${escapeHtml(r.remark||'')}</textarea></div>
+        </div>
+
+        <div style="margin-top:8px" class="grid cols-3">
+          <div class="stack"><label>Receipt</label>${r.photos?.receipt?`<div style="display:flex;gap:8px;align-items:center"><img src="${r.photos.receipt}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;cursor:pointer" data-img="${r.photos.receipt}"/><button class="btn small ap-remove" data-id="${r.id}" data-type="receipt">Remove</button></div>`:'<div class="muted-xs">No image</div>'}</div>
+          <div class="stack"><label>Odometer Photo</label>${r.photos?.odo?`<div style="display:flex;gap:8px;align-items:center"><img src="${r.photos.odo}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;cursor:pointer" data-img="${r.photos.odo}"/><button class="btn small ap-remove" data-id="${r.id}" data-type="odo">Remove</button></div>`:'<div class="muted-xs">No image</div>'}</div>
+          <div class="stack"><label>Station Photo</label>${r.photos?.pump?`<div style="display:flex;gap:8px;align-items:center"><img src="${r.photos.pump}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;cursor:pointer" data-img="${r.photos.pump}"/><button class="btn small ap-remove" data-id="${r.id}" data-type="pump">Remove</button></div>`:'<div class="muted-xs">No image</div>'}</div>
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn ap-save" data-id="${r.id}">Save</button>
+          <button class="btn ap-reject" data-id="${r.id}">Reject</button>
+          <button class="btn primary ap-approve" data-id="${r.id}">Approve</button>
+        </div>
+      </div>`;
+    }).join('');
+    $('#approvalsTable').innerHTML = html;
+
+    // attach delegated handlers for recalculation and actions
+    // recalc on input of rate/lit
+    $('#approvalsTable').addEventListener('input', function evHandler(e){
+      const t = e.target;
+      if(t.classList.contains('ap-rate') || t.classList.contains('ap-lit')){
+        const id = t.getAttribute('data-id');
+        const rateEl = document.querySelector(`.ap-rate[data-id="${id}"]`);
+        const litEl = document.querySelector(`.ap-lit[data-id="${id}"]`);
+        const totEl = document.querySelector(`.ap-total[data-id="${id}"]`);
+        const r = parseFloat(rateEl.value)||0; const l = parseFloat(litEl.value)||0;
+        if(totEl) totEl.value = (r*l).toFixed(2);
+      }
+    });
+
+    // clicks for save/approve/reject/remove/view image
+    $('#approvalsTable').addEventListener('click', function handler(e){
+      const t = e.target;
+      if(t.classList.contains('ap-save')) saveApproval(t.getAttribute('data-id'));
+      else if(t.classList.contains('ap-approve')) decide(t.getAttribute('data-id'),'APPROVE');
+      else if(t.classList.contains('ap-reject')) decide(t.getAttribute('data-id'),'REJECT');
+      else if(t.classList.contains('ap-remove')) removeImage(t.getAttribute('data-id'), t.getAttribute('data-type'));
+      else if(t.tagName === 'IMG' && t.dataset.img) openImageModal(t.dataset.img);
+    }, {once:false});
+  }
+
+  function toInputLocal(iso){
+    if(!iso) return '';
+    const d = new Date(iso); const pad = n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function saveApproval(id){
+    const s = session(); if(!s) return;
+    if(!hasWidget('W_APPROVE') && s.role !== ROLES.ADMIN){ toast('Not allowed'); return; }
+    const reqs = lsGet(KEY.REQ,[]); const idx = reqs.findIndex(r=>r.id===id); if(idx<0) return;
+    const old = structuredClone(reqs[idx]);
+    const rateEl = document.querySelector(`.ap-rate[data-id="${id}"]`);
+    const litEl = document.querySelector(`.ap-lit[data-id="${id}"]`);
+    const odoEl = document.querySelector(`.ap-odo[data-id="${id}"]`);
+    const dateEl = document.querySelector(`.ap-date[data-id="${id}"]`);
+    const remEl = document.querySelector(`.ap-rem[data-id="${id}"]`);
+    const rate = rateEl ? (parseFloat(rateEl.value)||0) : reqs[idx].rate;
+    const liters = litEl ? (parseFloat(litEl.value)||0) : reqs[idx].liters;
+    const odo = odoEl ? (parseFloat(odoEl.value)||0) : reqs[idx].odometer;
+    const createdAt = (dateEl && dateEl.value) ? new Date(dateEl.value).toISOString() : reqs[idx].createdAt;
+    const remark = remEl ? (remEl.value||'') : reqs[idx].remark || '';
+    reqs[idx].rate = rate; reqs[idx].liters = liters; reqs[idx].total = +(rate*liters).toFixed(2); reqs[idx].odometer = odo; reqs[idx].createdAt = createdAt; reqs[idx].remark = remark;
+    reqs[idx].version = (reqs[idx].version||1) + 1; reqs[idx].history = reqs[idx].history||[]; reqs[idx].history.unshift({ver:reqs[idx].version,by:s.username,at:now(),old:old});
+    reqs[idx].updatedAt = now(); lsSet(KEY.REQ, reqs); addLog(s.username,s.role,'edit_request_saved',old,reqs[idx]); toast('Saved'); renderApprovals(); renderMyRequests(); renderStats();
+  }
+
+  function removeImage(id,type){
+    const s = session(); if(!s) return;
+    if(!hasWidget('W_APPROVE') && s.role !== ROLES.ADMIN){ toast('Not allowed'); return; }
+    const reqs = lsGet(KEY.REQ,[]); const i = reqs.findIndex(r=>r.id===id); if(i<0) return;
+    const old = structuredClone(reqs[i]);
+    if(reqs[i].photos && reqs[i].photos[type]){ reqs[i].photos[type] = null; reqs[i].version = (reqs[i].version||1)+1; reqs[i].history = reqs[i].history||[]; reqs[i].history.unshift({ver:reqs[i].version,by:s.username,at:now(),old:old}); lsSet(KEY.REQ,reqs); addLog(s.username,s.role,'remove_image',{id,type},reqs[i]); toast('Image removed'); renderApprovals(); renderMyRequests(); }
+    else toast('No image to remove');
+  }
+
+  function openRequestModal(id){
+    const reqs = lsGet(KEY.REQ,[]); const r = reqs.find(x=>x.id===id); if(!r) return; const s = session();
+    const vehMap = Object.fromEntries(lsGet(KEY.VEH,[]).map(v=>[v.id,v.number])); const venMap = Object.fromEntries(lsGet(KEY.VEN,[]).map(v=>[v.id,v.name]));
+    const canEdit = s && (s.role === ROLES.ADMIN || hasWidget('W_APPROVE'));
+    const historyHtml = (r.history||[]).slice(0,8).map(h=>`<div class="muted-xs">v${h.ver} • by ${escapeHtml(h.by)} • ${new Date(h.at).toLocaleString()}</div>`).join('') || '<div class="muted-xs">No history</div>';
+    const html = `
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3>Req# ${r.reqNo}</h3><div><button class="btn" id="mClose">Close</button></div></div>
+      <div style="margin-top:8px" class="grid cols-3">
+        <div><label>Driver</label><input value="${escapeHtml(r.driverName)} — ${escapeHtml(r.driverRole)}" readonly/></div>
+        <div><label>Vehicle</label><input value="${escapeHtml(vehMap[r.vehicleId]||'-')}" readonly/></div>
+        <div><label>Vendor</label><input value="${escapeHtml(venMap[r.vendorId]||'-')}" readonly/></div>
+      </div>
+      <div style="margin-top:8px" class="grid cols-3">
+        <div><label>Rate</label><input id="edRate" value="${r.rate}" ${canEdit?'':'readonly'} /></div>
+        <div><label>Liters</label><input id="edLiters" value="${r.liters}" ${canEdit?'':'readonly'} /></div>
+        <div><label>Total</label><input id="edTotal" value="${r.total}" readonly /></div>
+      </div>
+      <div style="margin-top:8px"><label>Remark</label><textarea id="edRemark" ${canEdit?'':'readonly'}>${escapeHtml(r.remark||'')}</textarea></div>
+      <div style="margin-top:8px" class="thumb-row">
+        ${r.photos?.odo?`<img src="${r.photos.odo}" onclick="openImageModal('${r.photos.odo}')" />`:''}
+        ${r.photos?.pump?`<img src="${r.photos.pump}" onclick="openImageModal('${r.photos.pump}')" />`:''}
+        ${r.photos?.receipt?`<img src="${r.photos.receipt}" onclick="openImageModal('${r.photos.receipt}')" />`:''}
+      </div>
+      <div style="margin-top:8px"><strong>History</strong>${historyHtml}</div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        ${canEdit?`<button class="btn" id="mSave">Save</button>`:''}
+        ${s && s.role===ROLES.ADMIN?`<button class="btn danger" id="mDelete">Delete</button>`:''}
+      </div>
+    `;
+    openModal(html);
+    $('#mClose').onclick = closeModal;
+    if(canEdit){
+      const elR = $('#edRate'), elL = $('#edLiters'), elT = $('#edTotal');
+      if(elR && elL && elT){
+        const recalc = ()=> elT.value = ((parseFloat(elR.value)||0)*(parseFloat(elL.value)||0)).toFixed(2);
+        elR.addEventListener('input', recalc); elL.addEventListener('input', recalc);
+      }
+      $('#mSave').onclick = ()=> saveRequestEdit(id);
+    }
+    if($('#mDelete')) $('#mDelete').onclick = ()=> { if(confirm('Delete?')){ deleteRequest(id); closeModal(); } };
+  }
+
+  function saveRequestEdit(id){
+    const s = session(); if(!s) return;
+    if(!hasWidget('W_APPROVE') && s.role !== ROLES.ADMIN){ toast('Admin/Approver only'); return; }
+    const reqs = lsGet(KEY.REQ,[]); const i = reqs.findIndex(x=>x.id===id); if(i<0) return;
+    const old = structuredClone(reqs[i]);
+    const rate = parseFloat($('#edRate').value)||0; const liters = parseFloat($('#edLiters').value)||0; const remark = $('#edRemark').value||'';
+    reqs[i].rate = rate; reqs[i].liters = liters; reqs[i].total = +(rate*liters).toFixed(2); reqs[i].remark = remark;
+    reqs[i].version = (reqs[i].version||1) + 1; reqs[i].history = reqs[i].history||[]; reqs[i].history.unshift({ver:reqs[i].version,by:s.username,at:now(),old:old});
+    reqs[i].updatedAt = now(); lsSet(KEY.REQ, reqs); addLog(s.username,s.role,'admin_edit_request',old,reqs[i]); toast('Saved'); closeModal(); renderApprovals(); renderMyRequests(); renderStats();
+  }
+
+  function decide(id, action){
+    const s = session(); if(!s) return;
+    if(!hasWidget('W_APPROVE') && s.role !== ROLES.ADMIN){ toast('Not allowed'); return; }
+    const reqs = lsGet(KEY.REQ,[]); const i = reqs.findIndex(r=>r.id===id); if(i<0) return;
+    // pull latest inputs (if present in approvals DOM)
+    const rateEl = document.querySelector(`.ap-rate[data-id="${id}"]`);
+    const litEl = document.querySelector(`.ap-lit[data-id="${id}"]`);
+    const odoEl = document.querySelector(`.ap-odo[data-id="${id}"]`);
+    const dateEl = document.querySelector(`.ap-date[data-id="${id}"]`);
+    const remEl = document.querySelector(`.ap-rem[data-id="${id}"]`);
+    const rate = rateEl ? (parseFloat(rateEl.value)||0) : reqs[i].rate;
+    const liters = litEl ? (parseFloat(litEl.value)||0) : reqs[i].liters;
+    const odo = odoEl ? (parseFloat(odoEl.value)||0) : reqs[i].odometer;
+    const createdAt = (dateEl && dateEl.value) ? new Date(dateEl.value).toISOString() : reqs[i].createdAt;
+    const remark = remEl ? (remEl.value||'') : reqs[i].remark || '';
+    const old = structuredClone(reqs[i]);
+    reqs[i].rate = rate; reqs[i].liters = liters; reqs[i].total = +(rate*liters).toFixed(2); reqs[i].odometer = odo; reqs[i].createdAt = createdAt; reqs[i].remark = remark;
+    reqs[i].version = (reqs[i].version||1) + 1; reqs[i].history = reqs[i].history||[]; reqs[i].history.unshift({ver:reqs[i].version,by:s.username,at:now(),old:old});
+    if(action === 'APPROVE'){ reqs[i].status = STATUS.APPROVED; reqs[i].approverId = s.id; reqs[i].approverName = s.displayName || s.username; addLog(s.username,s.role,'approve_request',old,reqs[i]); toast('Approved'); }
+    else { reqs[i].status = STATUS.REJECTED; reqs[i].approverId = s.id; reqs[i].approverName = s.displayName || s.username; addLog(s.username,s.role,'reject_request',old,reqs[i]); toast('Rejected'); }
+    reqs[i].updatedAt = now(); lsSet(KEY.REQ, reqs);
+    renderApprovals(); renderMyRequests(); renderStats();
+  }
+
+  function prepareReports(){ $('#repVeh').innerHTML = '<option value="ALL">All</option>' + lsGet(KEY.VEH,[]).map(v=>`<option value="${v.id}">${escapeHtml(v.number)}</option>`).join(''); }
+  function runReport(justRun=false){
+    const from = $('#repFrom').value ? new Date($('#repFrom').value) : null; const to = $('#repTo').value ? new Date($('#repTo').value) : null;
+    const veh = $('#repVeh').value; const status = $('#repStatus').value;
+    let rows = lsGet(KEY.REQ,[]).filter(r=> {
+      const t = new Date(r.createdAt);
+      if(from && t < from) return false;
+      if(to && t > new Date(to.getTime() + 86399999)) return false;
+      if(veh && veh !== 'ALL' && r.vehicleId !== veh) return false;
+      if(status && status !== 'ALL' && r.status !== status) return false;
+      return true;
+    });
+    const vehMap = Object.fromEntries(lsGet(KEY.VEH,[]).map(v=>[v.id,v.number])); const venMap = Object.fromEntries(lsGet(KEY.VEN,[]).map(v=>[v.id,v.name]));
+    const totL = rows.reduce((a,b)=>a+(+b.liters||0),0); const totA = rows.reduce((a,b)=>a+(+b.total||0),0);
+    const body = rows.map(r=>`<tr><td data-label="Req#">${r.reqNo}</td><td data-label="Date">${new Date(r.createdAt).toLocaleDateString()}</td><td data-label="Vehicle">${escapeHtml(vehMap[r.vehicleId]||'-')}</td><td data-label="Driver">${escapeHtml(r.driverName||'')}</td><td data-label="Fuel">${escapeHtml(r.fuelType)}</td><td data-label="Vendor">${escapeHtml(venMap[r.vendorId]||'-')}</td><td data-label="Liters" class="right">${(+r.liters).toFixed(2)}</td><td data-label="Rate" class="right">${(+r.rate).toFixed(2)}</td><td data-label="Total" class="right">₹${(+r.total).toFixed(2)}</td><td data-label="Status">${r.status}</td><td data-label="Remark">${escapeHtml(r.remark||'')}</td></tr>`).join('');
+    $('#reportsOut').innerHTML = `<div class="card"><div class="row"><span class="pill">Entries: ${rows.length}</span><span class="pill">Liters: ${totL.toFixed(2)}</span><span class="pill">Amount: ₹${totA.toFixed(2)}</span></div></div><div style="overflow:auto;margin-top:8px"><table class="table"><thead><tr><th>Req#</th><th>Date</th><th>Vehicle</th><th>Driver</th><th>Fuel</th><th>Vendor</th><th class="right">Liters</th><th class="right">Rate</th><th class="right">Total</th><th>Status</th><th>Remark</th></tr></thead><tbody>${body||'<tr><td colspan=11 class="muted-xs">No data</td></tr>'}</tbody></table></div>`;
+    if(!justRun) addLog(session().username, session().role, 'run_report', null, null, {from: $('#repFrom').value, to: $('#repTo').value, veh, status});
+  }
+  function exportCSV(){
+    const from = $('#repFrom').value ? new Date($('#repFrom').value) : null; const to = $('#repTo').value ? new Date($('#repTo').value) : null;
+    const veh = $('#repVeh').value; const status = $('#repStatus').value;
+    let rows = lsGet(KEY.REQ,[]).filter(r=> {
+      const t = new Date(r.createdAt);
+      if(from && t < from) return false;
+      if(to && t > new Date(to.getTime() + 86399999)) return false;
+      if(veh && veh !== 'ALL' && r.vehicleId !== veh) return false;
+      if(status && status !== 'ALL' && r.status !== status) return false;
+      return true;
+    });
+    if(!rows.length){ toast('No data'); return; }
+    const vehMap = Object.fromEntries(lsGet(KEY.VEH,[]).map(v=>[v.id,v.number])); const venMap = Object.fromEntries(lsGet(KEY.VEN,[]).map(v=>[v.id,v.name]));
+    const cols = ['reqNo','createdAt','vehicle','driverName','fuelType','vendor','liters','rate','total','status','remark'];
+    const data = rows.map(r=>({ reqNo:r.reqNo, createdAt:new Date(r.createdAt).toLocaleString(), vehicle:vehMap[r.vehicleId]||'', driverName:r.driverName||'', fuelType:r.fuelType, vendor:venMap[r.vendorId]||'', liters:r.liters, rate:r.rate, total:r.total, status:r.status, remark:r.remark||'' }));
+    const csv = [cols.join(',')].concat(data.map(o=>cols.map(c=>`"${String(o[c]??'').replaceAll('"','""')}"`).join(',')).join('\n'));
+    const blob = new Blob(csv,{type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='fuel-report.csv'; a.click(); URL.revokeObjectURL(url);
+  }
+
+  function renderUsersUI(){
+    $('#uWidgets').innerHTML = ALL_WIDGETS.map(w=>`<label style="display:inline-flex;align-items:center;gap:8px"><input type="checkbox" id="uw_${w.id}"> <span class="muted-xs">${escapeHtml(w.label)}</span></label>`).join('');
+    renderUsersList();
+  }
+  function renderUsersList(){
+    const users = lsGet(KEY.USERS,[]);
+    if(!users.length){ $('#usersList').innerHTML = '<div class="muted-xs">No users</div>'; return; }
+    const rows = users.map(u=>`<tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.displayName||u.username)}</td><td>${escapeHtml(u.role)}</td><td>${(u.widgets||[]).length}</td><td>${u.status}</td><td><button class="btn small" onclick="editUser('${u.id}')">Edit</button> <button class="btn small" onclick="deleteUser('${u.id}')">Delete</button></td></tr>`).join('');
+    $('#usersList').innerHTML = `<div style="overflow:auto"><table class="table"><thead><tr><th>User</th><th>Display</th><th>Role</th><th>Widgets</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function clearUserForm(){ $('#uName').value=''; $('#uPass').value=''; $('#uDisplay').value=''; $('#uRole').value=''; $('#uStatus').value='ACTIVE'; ALL_WIDGETS.forEach(w=>{ const el=document.getElementById('uw_'+w.id); if(el) el.checked=false; }); delete $('#uName').dataset.editId; }
+  function saveUser(){ const s = session(); if(!s || s.role !== ROLES.ADMIN){ toast('Only admin'); return; }
+    const username = $('#uName').value.trim(), password = $('#uPass').value, display = $('#uDisplay').value.trim()||username, role = $('#uRole').value, status = $('#uStatus').value;
+    if(!username || !password){ toast('User & pass required'); return; }
+    if(!role){ toast('Select a role'); return; }
+    const users = lsGet(KEY.USERS,[]); const editId = $('#uName').dataset.editId || null;
+    const widgets = ALL_WIDGETS.filter(w=>document.getElementById('uw_'+w.id).checked).map(w=>w.id);
+    if(editId){ const idx = users.findIndex(u=>u.id===editId); if(idx<0) return; const old = structuredClone(users[idx]); users[idx].username = username; users[idx].password = password; users[idx].displayName = display; users[idx].role = role; users[idx].widgets = widgets; users[idx].status = status; lsSet(KEY.USERS, users); addLog(s.username,s.role,'update_user',old,users[idx]); toast('User updated'); }
+    else { if(users.find(u=>u.username===username)){ toast('User exists'); return; } const u = {id:uid(),username,password,displayName:display,role,widgets,status}; users.push(u); lsSet(KEY.USERS, users); addLog(s.username,s.role,'create_user',null,u); toast('User added'); }
+    clearUserForm(); renderUsersList(); renderCompanyUsers();
+  }
+  function editUser(id){ const users = lsGet(KEY.USERS,[]); const u = users.find(x=>x.id===id); if(!u) return; $('#uName').value=u.username; $('#uPass').value=u.password; $('#uDisplay').value=u.displayName||u.username; $('#uRole').value=u.role; $('#uStatus').value=u.status; $('#uName').dataset.editId = u.id; ALL_WIDGETS.forEach(w=>{ const el=document.getElementById('uw_'+w.id); if(el) el.checked=(u.widgets||[]).includes(w.id); }); }
+  function deleteUser(id){ const s = session(); if(!s || s.role !== ROLES.ADMIN) return; if(!confirm('Delete user?')) return; const arr = lsGet(KEY.USERS,[]); const i = arr.findIndex(x=>x.id===id); if(i<0) return; const old = arr[i]; arr.splice(i,1); lsSet(KEY.USERS,arr); addLog(s.username,s.role,'delete_user',old,null); renderUsersList(); renderCompanyUsers(); }
+
+  function renderAssets(){ renderVehicles(); renderVendors(); }
+  function renderVehicles(){ const v = lsGet(KEY.VEH,[]); $('#vehList').innerHTML = v.map(x=>`<div class="row" style="justify-content:space-between;align-items:center"><div><b>${escapeHtml(x.number)}</b> <span class="muted-xs">${escapeHtml(x.fuel)}</span></div><div><button class="btn small" onclick="editVehicle('${x.id}')">Edit</button> <button class="btn small" onclick="delVehicle('${x.id}')">Delete</button></div></div>`).join('') || '<div class="muted-xs">No vehicles</div>'; }
+  function renderVendors(){ const v = lsGet(KEY.VEN,[]); $('#venList').innerHTML = v.map(x=>`<div class="row" style="justify-content:space-between;align-items:center"><div><b>${escapeHtml(x.name)}</b></div><div><button class="btn small" onclick="editVendor('${x.id}')">Edit</button> <button class="btn small" onclick="delVendor('${x.id}')">Delete</button></div></div>`).join('') || '<div class="muted-xs">No vendors</div>'; }
+  function saveVehicle(){ const s = session(); if(!s || (s.role !== ROLES.ADMIN && !hasWidget('W_ASSET'))){ toast('Not allowed'); return; } const num = $('#vehNum').value.trim(); const fuel = $('#vehFuel').value; if(!num){ toast('Enter reg no'); return; } const arr = lsGet(KEY.VEH,[]); const editId = $('#vehNum').dataset.editId || null; if(editId){ const i = arr.findIndex(x=>x.id===editId); if(i<0) return; const old = structuredClone(arr[i]); arr[i].number = num; arr[i].fuel = fuel; lsSet(KEY.VEH,arr); delete $('#vehNum').dataset.editId; addLog(s.username,s.role,'update_vehicle',old,arr[i]); toast('Vehicle updated'); } else { const v={id:uid(),number:num,fuel}; arr.push(v); lsSet(KEY.VEH,arr); addLog(s.username,s.role,'create_vehicle',null,v); toast('Vehicle added'); } $('#vehNum').value=''; renderVehicles(); prepareFuelForm(); }
+  function editVehicle(id){ const arr = lsGet(KEY.VEH,[]); const v = arr.find(x=>x.id===id); if(!v) return; $('#vehNum').value=v.number; $('#vehFuel').value=v.fuel; $('#vehNum').dataset.editId=v.id; }
+  function delVehicle(id){ const s = session(); if(!s || s.role !== ROLES.ADMIN) return; if(!confirm('Delete vehicle?')) return; const arr = lsGet(KEY.VEH,[]); const i = arr.findIndex(x=>x.id===id); if(i<0) return; const old = arr[i]; arr.splice(i,1); lsSet(KEY.VEH,arr); addLog(s.username,s.role,'delete_vehicle',old,null); renderVehicles(); prepareFuelForm(); }
+
+  function saveVendor(){ const s = session(); if(!s || (s.role !== ROLES.ADMIN && !hasWidget('W_ASSET'))){ toast('Not allowed'); return; } const name = $('#venName').value.trim(); if(!name){ toast('Enter vendor name'); return; } const arr = lsGet(KEY.VEN,[]); const editId = $('#venName').dataset.editId || null; if(editId){ const i = arr.findIndex(x=>x.id===editId); if(i<0) return; const old = structuredClone(arr[i]); arr[i].name = name; lsSet(KEY.VEN,arr); delete $('#venName').dataset.editId; addLog(s.username,s.role,'update_vendor',old,arr[i]); toast('Vendor updated'); } else { const v={id:uid(),name}; arr.push(v); lsSet(KEY.VEN,arr); addLog(s.username,s.role,'create_vendor',null,v); toast('Vendor added'); } $('#venName').value=''; renderVendors(); prepareFuelForm(); }
+  function editVendor(id){ const arr = lsGet(KEY.VEN,[]); const v = arr.find(x=>x.id===id); if(!v) return; $('#venName').value=v.name; $('#venName').dataset.editId=v.id; }
+  function delVendor(id){ const s = session(); if(!s || s.role !== ROLES.ADMIN) return; if(!confirm('Delete vendor?')) return; const arr = lsGet(KEY.VEN,[]); const i = arr.findIndex(x=>x.id===id); if(i<0) return; const old = arr[i]; arr.splice(i,1); lsSet(KEY.VEN,arr); addLog(s.username,s.role,'delete_vendor',old,null); renderVendors(); prepareFuelForm(); }
+
+  function renderLogs(){ const q = ($('#logSearch').value||'').toLowerCase(); const logs = lsGet(KEY.LOG,[]).filter(l=> (l.user+' '+l.action+' '+(l.role||'')).toLowerCase().includes(q)); if(!logs.length){ $('#logsOut').innerHTML = '<div class="muted-xs">No logs</div>'; return; } $('#logsOut').innerHTML = logs.slice(0,500).map(l=>`<div class="row" style="justify-content:space-between;align-items:center"><div><b>${escapeHtml(l.action)}</b> <span class="muted-xs">${escapeHtml(l.user)} — ${escapeHtml(l.role||'')}</span></div><div class="muted-xs">${new Date(l.ts).toLocaleString()}</div></div>`).join(''); }
+  function exportLogs(){ const logs = lsGet(KEY.LOG,[]); const blob = new Blob([JSON.stringify(logs,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='audit-logs.json'; a.click(); URL.revokeObjectURL(url); }
+
+  function openModal(html){ $('#modal').classList.remove('hidden'); $('#modalBody').innerHTML = html; }
+  function closeModal(){ $('#modal').classList.add('hidden'); $('#modalBody').innerHTML=''; }
+  function openImageModal(src){ openModal(`<div style="text-align:center"><img src="${src}" class="img-full"/><div style="height:8px"></div><div class="row" style="justify-content:center"><button class="btn" onclick="closeModal()">Close</button></div></div>`); }
+
+  function renderCompany(){ const comp = lsGet(KEY.COMP,{name:'BusMate',logo:null,users:[]}); $('#companyName').value = comp.name || ''; $('#companyLogoFile').value = ''; renderCompanyUsers(); }
+  function companyPreview(input){ const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = e => { const d = e.target.result; $('#companyLogo').src = d; $('#companyLogo').style.display='inline-block'; const comp = lsGet(KEY.COMP,{name:'BusMate',logo:null,users:[]}); comp.logo = d; lsSet(KEY.COMP, comp); }; r.readAsDataURL(f); }
+  function renderCompanyUsers(){ const comp = lsGet(KEY.COMP,{name:'BusMate',logo:null,users:[]}); const users = lsGet(KEY.USERS,[]); $('#companyUsers').innerHTML = users.map(u=>`<label style="display:inline-flex;align-items:center;gap:8px"><input type="checkbox" data-uid="${u.id}" ${ (comp.users||[]).includes(u.id) ? 'checked' : '' }/> <span class="muted-xs">${escapeHtml(u.displayName||u.username)}</span></label>`).join(''); }
+  function saveCompany(){ const s = session(); if(!s || s.role !== ROLES.ADMIN){ toast('Admin only'); return; } const name = $('#companyName').value.trim(); const comp = lsGet(KEY.COMP,{name:'BusMate',logo:null,users:[]}); comp.name = name || comp.name; const nodes = Array.from(document.querySelectorAll('#companyUsers input[data-uid]')); comp.users = nodes.filter(n=>n.checked).map(n=>n.getAttribute('data-uid')); lsSet(KEY.COMP, comp); addLog(s.username,s.role,'update_company',null,comp); applyCompany(); toast('Company saved'); }
+
+  function prepareChangePwd(){ $('#cp_current').value=''; $('#cp_new').value=''; $('#cp_confirm').value=''; $('#btnChangePwd').onclick = changePassword; }
+  function changePassword(){
+    const s = session(); if(!s){ toast('Login required'); return; }
+    const cur = $('#cp_current').value, neu = $('#cp_new').value, cof = $('#cp_confirm').value;
+    if(!cur || !neu){ toast('Fill both fields'); return; }
+    if(neu !== cof){ toast('New passwords do not match'); return; }
+    const users = lsGet(KEY.USERS,[]); const uidx = users.findIndex(u=>u.id===s.id); if(uidx<0){ toast('User not found'); return; }
+    if(users[uidx].password !== cur){ toast('Current password incorrect'); return; }
+    const old = structuredClone(users[uidx]); users[uidx].password = neu; lsSet(KEY.USERS, users); addLog(s.username,s.role,'change_password',old,{id:s.id}); toast('Password changed'); }
+
+  function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+
+  function wire(){
+    $('#btnLogin').onclick = handleLogin;
+    $('#btnSubmitFuel').onclick = submitFuel;
+    $('#frRate').addEventListener('input', calcFrTotal); $('#frLiters').addEventListener('input', calcFrTotal);
+    $('#frPhotoOdo').addEventListener('change', previewFuelFiles); $('#frPhotoPump').addEventListener('change', previewFuelFiles); $('#frPhotoReceipt').addEventListener('change', previewFuelFiles);
+    $('#mrSearch').addEventListener('input', renderMyRequests); $('#mrShowApproved').addEventListener('change', renderMyRequests);
+    $('#apSearch').addEventListener('input', renderApprovals);
+    $('#btnRunReport').onclick = ()=> runReport(false); $('#btnExportCSV').onclick = exportCSV;
+    $('#btnSaveUser').onclick = saveUser; $('#btnClearUser').onclick = clearUserForm;
+    $('#btnSaveVehicle').onclick = saveVehicle; $('#btnSaveVendor').onclick = saveVendor;
+    $('#btnSaveCompany').onclick = saveCompany; $('#companyLogoFile').addEventListener('change', function(){ companyPreview(this); });
+    $('#btnExportLogs').onclick = exportLogs; $('#logSearch').addEventListener('input', renderLogs);
+    $('#bottomNav').querySelectorAll('button')[0].onclick = ()=> openView('viewHome');
+    $('#bottomNav').querySelectorAll('button')[1].onclick = ()=> openView('viewAddFuel');
+    $('#bottomNav').querySelectorAll('button')[2].onclick = ()=> openView('viewMyRequests');
+    renderAuth();
+  }
+
+  // init
+  seed(); wire(); applyCompany(); const s0 = session(); if(s0) openView('viewHome'); else openView('viewLogin');
+
+  // expose needed actions
+  window.openView = openView; window.openModal = openModal; window.closeModal = closeModal; window.openImageModal = openImageModal;
+  window.deleteRequest = deleteRequest; window.openRequestModal = openRequestModal; window.saveRequestEdit = saveRequestEdit; window.removeImage = removeImage;
+  window.editUser = editUser; window.deleteUser = deleteUser; window.editVehicle = editVehicle; window.delVehicle = delVehicle;
+  window.editVendor = editVendor; window.delVendor = delVendor; window.renderCompanyUsers = renderCompanyUsers; window.companyPreview = companyPreview;
+  window.runReport = runReport; window.exportCSV = exportCSV; window.renderApprovals = renderApprovals; window.renderMyRequests = renderMyRequests;
+  if(!window.structuredClone) window.structuredClone = obj => JSON.parse(JSON.stringify(obj));
+})();
 </script>
 </body>
 </html>
